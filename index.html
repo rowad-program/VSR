@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ساحة التحدي - قناة وك</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main, #0d1b2a);
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .controls {
+            background: #1b263b;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        .controls h3 {
+            margin: 0 0 12px 0;
+            color: #4cc9f0;
+            text-align: center;
+            font-size: 17px;
+        }
+        .controls label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #e0e1dd;
+        }
+        .controls input, .controls textarea, .controls button {
+            width: 100%;
+            padding: 9px 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .controls input, .controls textarea {
+            background: #0d1b2a;
+            color: #fff;
+            border: 1px solid #415a77;
+        }
+        .stage-tabs, .theme-tabs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+        .stage-tab, .theme-tab {
+            padding: 8px 4px;
+            background: #0d1b2a;
+            color: #a0aec0;
+            border: 1px solid #415a77;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        .stage-tab.active, .theme-tab.active {
+            background: #4cc9f0;
+            color: #0d1b2a;
+            border-color: #4cc9f0;
+        }
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .btn-group button {
+            background: #4cc9f0;
+            color: #0d1b2a;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 0;
+            font-size: 13px;
+            padding: 10px 6px;
+        }
+        .btn-group button.secondary { background: #ffd166; }
+        .btn-group button.advance-btn { background: #06d6a0; }
+        .btn-group button.danger { background: #ef476f; color: #fff; }
+
+        #capture-area {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg-card, #0b132b);
+            border: 2px solid var(--border-color, #3a506b);
+            border-radius: 14px;
+            padding: 14px 12px;
+            position: relative;
+            direction: rtl;
+        }
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color, #3a506b);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .game-badge {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--accent-color, #ffd166);
+            background: var(--badge-bg, rgba(255, 209, 102, 0.14));
+            border: 1px solid var(--accent-color, rgba(255, 209, 102, 0.4));
+            padding: 4px 18px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+            min-height: 28px;
+            min-width: 90px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .game-badge:empty { display: none; }
+        .channel-tag {
+            font-size: 12px;
+            color: var(--accent-color, #ffd166);
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        .title-center h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 20px;
+        }
+        .title-center p {
+            margin: 4px 0 0 0;
+            color: var(--sub-color, #4cc9f0);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .columns-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 42px 6px 28px;
+            color: var(--sub-color, #4cc9f0);
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .match-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--row-bg, rgba(27, 38, 59, 0.8));
+            margin-bottom: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--row-border, #2b4162);
+            overflow: hidden;
+        }
+        .side {
+            flex: 1;
+            text-align: center;
+            padding: 8px 4px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #edf2f7;
+            min-height: 20px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .side.winner {
+            background: rgba(6, 214, 160, 0.28);
+            color: #06d6a0;
+            box-shadow: inset 0 0 6px rgba(6, 214, 160, 0.35);
+        }
+        .side.bye-slot {
+            color: var(--accent-color, #ffd166);
+            font-size: 11px;
+            font-style: italic;
+            cursor: default;
+            background: rgba(255, 209, 102, 0.08);
+        }
+        .vs-badge {
+            background: var(--vs-bg, #1d3557);
+            color: var(--sub-color, #4cc9f0);
+            padding: 8px 8px;
+            font-weight: bold;
+            font-size: 11px;
+            border-left: 1px solid var(--row-border, #2b4162);
+            border-right: 1px solid var(--row-border, #2b4162);
+        }
+        .index-badge {
+            background: var(--idx-bg, #0b132b);
+            color: var(--sub-color, #4cc9f0);
+            padding: 8px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 24px;
+            text-align: center;
+            border-left: 1px solid var(--row-border, #2b4162);
+        }
+        .champion-box {
+            text-align: center;
+            padding: 30px 15px;
+            background: radial-gradient(circle, var(--champ-glow, rgba(255,209,102,0.18)) 0%, rgba(11,19,43,0.9) 100%);
+            border: 2px solid var(--accent-color, #ffd166);
+            border-radius: 12px;
+            margin: 12px 0;
+        }
+        .champion-trophy { font-size: 48px; margin-bottom: 8px; }
+        .champion-label { color: var(--sub-color, #4cc9f0); font-size: 15px; margin-bottom: 6px; }
+        .champion-name { color: var(--accent-color, #ffd166); font-size: 28px; font-weight: bold; min-height: 38px; }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color, #3a506b);
+            padding-top: 8px;
+            margin-top: 12px;
+            font-size: 10px;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <h3>إدارة البطولة والمواجهات</h3>
+
+        <label>اختر الثيم (المظهر والألوان):</label>
+        <div class="theme-tabs">
+            <button id="theme-blue" class="theme-tab active" onclick="setTheme('blue')">👑 ملكي أزرق</button>
+            <button id="theme-gold" class="theme-tab" onclick="setTheme('gold')">⭐ ذهبي فاخر</button>
+            <button id="theme-neon" class="theme-tab" onclick="setTheme('neon')">⚡ نيون حماسي</button>
+            <button id="theme-emerald" class="theme-tab" onclick="setTheme('emerald')">🌿 أخضر رياضي</button>
+        </div>
+
+        <label>اختر مرحلة البطولة:</label>
+        <div class="stage-tabs">
+            <button id="stage-32" class="stage-tab active" onclick="setStage(32)">32 مباراة</button>
+            <button id="stage-16" class="stage-tab" onclick="setStage(16)">16 مباراة</button>
+            <button id="stage-8" class="stage-tab" onclick="setStage(8)">دوري 8</button>
+            <button id="stage-4" class="stage-tab" onclick="setStage(4)">دوري 4</button>
+            <button id="stage-2" class="stage-tab" onclick="setStage(2)">دوري 2</button>
+            <button id="stage-1" class="stage-tab" onclick="setStage(1)">النهائي</button>
+            <button id="stage-0" class="stage-tab" onclick="setStage(0)">الفائز 🏆</button>
+        </div>
+
+        <label>اسم اللعبة (يظهر في أعلى الجدول):</label>
+        <input type="text" id="gameNameInput" value="" placeholder="اكتب اسم اللعبة هنا..." oninput="updateText()">
+
+        <label>اسم القناة:</label>
+        <input type="text" id="channelNameInput" value="قناة وك" oninput="updateText()">
+
+        <label>عنوان الفعالية:</label>
+        <input type="text" id="eventTitleInput" value="ساحة التحدي" oninput="updateText()">
+
+        <label>اسم صاحب الفعالية:</label>
+        <input type="text" id="ownerInput" value="rowad" oninput="updateText()">
+
+        <div id="names-input-section">
+            <label id="playersInputLabel">أسماء المشاركين (64 خانة فارغة - كل اسم في سطر):</label>
+            <textarea id="playersInput" rows="4" placeholder="اكتب أو الصق الأسماء هنا..." oninput="updatePlayersFromText()"></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button class="secondary" onclick="shufflePlayers()">قرعة عشوائية 🎲</button>
+            <button class="advance-btn" onclick="advanceWinners()">تأهيل الفائزين ⏭️</button>
+            <button class="danger" onclick="clearAll()">تفريغ المربعات 🗑️</button>
+            <button onclick="downloadImageOffline()">حفظ كصورة 📥</button>
+        </div>
+    </div>
+
+    <div id="capture-area">
+        <div class="header">
+            <div class="game-badge" id="displayGame"></div>
+            <div class="channel-tag" id="displayChannel">قناة وك</div>
+            <div class="title-center">
+                <h3 id="displayTitle">ساحة التحدي</h3>
+                <p id="displaySub">المواجهات · دور الـ 64 · 32 مباراة</p>
+            </div>
+        </div>
+
+        <div class="columns-header" id="columnsHeader">
+            <span>A</span>
+            <span>B</span>
+        </div>
+
+        <div id="matches-container"></div>
+
+        <div class="footer">
+            <span>صاحب الفعالية: <span id="displayOwner">rowad</span></span>
+            <span>Designed & Developed by rowad</span>
+        </div>
+    </div>
+
+    <script>
+        let currentMatchesCount = 32;
+        let matchesData = [];
+        let currentTheme = 'blue';
+        const BYE_TEXT = "تأهل تلقائي ⭐";
+
+        const themes = {
+            blue: {
+                mainBg: '#0d1b2a', cardBg: '#0b132b', border: '#3a506b',
+                accent: '#ffd166', sub: '#4cc9f0', rowBg: 'rgba(27, 38, 59, 0.85)',
+                rowBorder: '#2b4162', vsBg: '#1d3557', idxBg: '#0b132b',
+                badgeBg: 'rgba(255, 209, 102, 0.15)', champGlow: 'rgba(255,209,102,0.18)'
+            },
+            gold: {
+                mainBg: '#121212', cardBg: '#181818', border: '#c59b27',
+                accent: '#ffd700', sub: '#e6c687', rowBg: 'rgba(35, 30, 20, 0.85)',
+                rowBorder: '#5c4a1b', vsBg: '#3d3112', idxBg: '#121212',
+                badgeBg: 'rgba(255, 215, 0, 0.15)', champGlow: 'rgba(255,215,0,0.22)'
+            },
+            neon: {
+                mainBg: '#13001a', cardBg: '#1a0026', border: '#b800e6',
+                accent: '#ff00ff', sub: '#00ffff', rowBg: 'rgba(35, 0, 51, 0.85)',
+                rowBorder: '#660080', vsBg: '#4d0066', idxBg: '#13001a',
+                badgeBg: 'rgba(255, 0, 255, 0.15)', champGlow: 'rgba(255,0,255,0.25)'
+            },
+            emerald: {
+                mainBg: '#02261a', cardBg: '#043827', border: '#00cc88',
+                accent: '#00ffaa', sub: '#79efd2', rowBg: 'rgba(6, 61, 43, 0.85)',
+                rowBorder: '#0e7a57', vsBg: '#0a4d38', idxBg: '#02261a',
+                badgeBg: 'rgba(0, 255, 170, 0.15)', champGlow: 'rgba(0,255,170,0.2)'
+            }
+        };
+
+        const stageTitles = {
+            32: "المواجهات · دور الـ 64 · 32 مباراة",
+            16: "المواجهات · دور الـ 32 · 16 مباراة",
+            8: "المواجهات · دوري الـ 8 (ثمن النهائي)",
+            4: "المواجهات · دوري الـ 4 (ربع النهائي)",
+            2: "المواجهات · دوري الـ 2 (نصف النهائي)",
+            1: "المواجهة النهائية · تحديد البطل",
+            0: "بطل ساحة التحدي 🏆"
+        };
+
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            document.querySelectorAll('.theme-tab').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('theme-' + themeName);
+            if (activeBtn) activeBtn.classList.add('active');
+            const t = themes[themeName];
+            const root = document.documentElement;
+            root.style.setProperty('--bg-main', t.mainBg);
+            root.style.setProperty('--bg-card', t.cardBg);
+            root.style.setProperty('--border-color', t.border);
+            root.style.setProperty('--accent-color', t.accent);
+            root.style.setProperty('--sub-color', t.sub);
+            root.style.setProperty('--row-bg', t.rowBg);
+            root.style.setProperty('--row-border', t.rowBorder);
+            root.style.setProperty('--vs-bg', t.vsBg);
+            root.style.setProperty('--idx-bg', t.idxBg);
+            root.style.setProperty('--badge-bg', t.badgeBg);
+            root.style.setProperty('--champ-glow', t.champGlow);
+            renderMatches();
+        }
+
+        function initEmptyMatches(count) {
+            matchesData = [];
+            if (count === 0) {
+                matchesData.push({ a: "", b: "", winner: null });
+                return;
+            }
+            for (let i = 0; i < count; i++) matchesData.push({ a: "", b: "", winner: null });
+        }
+
+        function setStage(matchesCount) {
+            currentMatchesCount = matchesCount;
+            document.querySelectorAll('.stage-tab').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('stage-' + matchesCount);
+            if (activeBtn) activeBtn.classList.add('active');
+            document.getElementById('displaySub').innerText = stageTitles[matchesCount];
+            const inputLabel = document.getElementById('playersInputLabel');
+            inputLabel.innerText = matchesCount === 0
+                ? "اسم الفائز بالبطولة:"
+                : `أسماء المشاركين (${matchesCount * 2} خانة فارغة - كل اسم في سطر):`;
+            initEmptyMatches(matchesCount);
+            document.getElementById('playersInput').value = "";
+            renderMatches();
+        }
+
+        function renderMatches() {
+            const container = document.getElementById('matches-container');
+            const colHeader = document.getElementById('columnsHeader');
+            container.innerHTML = '';
+            if (currentMatchesCount === 0) {
+                colHeader.style.display = 'none';
+                const champName = matchesData[0]?.a || "";
+                const champ = document.createElement('div');
+                champ.className = 'champion-box';
+                const trophy = document.createElement('div');
+                trophy.className = 'champion-trophy';
+                trophy.textContent = '🏆';
+                const label = document.createElement('div');
+                label.className = 'champion-label';
+                label.textContent = 'الفائز بالمركز الأول';
+                const name = document.createElement('div');
+                name.className = 'champion-name';
+                name.textContent = champName;
+                champ.append(trophy, label, name);
+                container.appendChild(champ);
+                return;
+            }
+            colHeader.style.display = 'flex';
+            matchesData.forEach((match, index) => {
+                const row = document.createElement('div');
+                row.className = 'match-row';
+                const idx = document.createElement('div');
+                idx.className = 'index-badge';
+                idx.textContent = (index + 1).toString().padStart(2, '0');
+                const sideA = document.createElement('div');
+                sideA.className = 'side' + (match.winner === 'a' ? ' winner' : '');
+                sideA.textContent = match.a;
+                sideA.addEventListener('click', () => selectWinner(index, 'a'));
+                const vs = document.createElement('div');
+                vs.className = 'vs-badge';
+                vs.textContent = 'VS';
+                const sideB = document.createElement('div');
+                sideB.className = 'side' + (match.winner === 'b' ? ' winner' : '') + (match.b === BYE_TEXT ? ' bye-slot' : '');
+                sideB.textContent = match.b;
+                sideB.addEventListener('click', () => selectWinner(index, 'b'));
+                row.append(idx, sideA, vs, sideB);
+                container.appendChild(row);
+            });
+        }
+
+        function selectWinner(matchIndex, side) {
+            if (!matchesData[matchIndex][side] || matchesData[matchIndex][side] === BYE_TEXT) return;
+            matchesData[matchIndex].winner = matchesData[matchIndex].winner === side ? null : side;
+            renderMatches();
+        }
+
+        function updatePlayersFromText() {
+            const raw = document.getElementById('playersInput').value;
+            const lines = raw.split(/\r?\n/).map(name => name.trim()).filter(name => name !== "");
+            if (currentMatchesCount === 0) {
+                matchesData[0].a = lines[0] || "";
+                renderMatches();
+                return;
+            }
+            for (let i = 0; i < currentMatchesCount; i++) {
+                matchesData[i].a = lines[i * 2] || "";
+                matchesData[i].b = lines[i * 2 + 1] || "";
+                matchesData[i].winner = null;
+            }
+            renderMatches();
+        }
+
+        function shufflePlayers() {
+            if (currentMatchesCount === 0) return;
+            const raw = document.getElementById('playersInput').value;
+            let allNames = raw.split(/\r?\n/).map(name => name.trim()).filter(name => name !== "" && name !== BYE_TEXT);
+            if (allNames.length === 0) return;
+            for (let i = allNames.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allNames[i], allNames[j]] = [allNames[j], allNames[i]];
+            }
+            document.getElementById('playersInput').value = allNames.join('\n');
+            initEmptyMatches(currentMatchesCount);
+            const isOdd = allNames.length % 2 !== 0;
+            const pairsCount = Math.floor(allNames.length / 2);
+            for (let i = 0; i < currentMatchesCount; i++) {
+                if (i < pairsCount) {
+                    matchesData[i].a = allNames[i * 2];
+                    matchesData[i].b = allNames[i * 2 + 1];
+                } else if (i === pairsCount && isOdd) {
+                    matchesData[i].a = allNames[allNames.length - 1];
+                    matchesData[i].b = BYE_TEXT;
+                    matchesData[i].winner = 'a';
+                }
+            }
+            renderMatches();
+        }
+
+        function advanceWinners() {
+            if (currentMatchesCount === 0) return;
+            let winners = [];
+            matchesData.forEach(m => {
+                if (m.winner === 'a' && m.a && m.a !== BYE_TEXT) winners.push(m.a);
+                else if (m.winner === 'b' && m.b && m.b !== BYE_TEXT) winners.push(m.b);
+            });
+            if (winners.length === 0) {
+                alert("يرجى تحديد الفائزين أولاً.");
+                return;
+            }
+            const nextStages = { 32: 16, 16: 8, 8: 4, 4: 2, 2: 1, 1: 0 };
+            const nextCount = nextStages[currentMatchesCount];
+            setStage(nextCount);
+            document.getElementById('playersInput').value = winners.join('\n');
+            updatePlayersFromText();
+        }
+
+        function clearAll() {
+            initEmptyMatches(currentMatchesCount);
+            document.getElementById('playersInput').value = "";
+            renderMatches();
+        }
+
+        function updateText() {
+            document.getElementById('displayGame').innerText = document.getElementById('gameNameInput').value.trim();
+            document.getElementById('displayChannel').innerText = document.getElementById('channelNameInput').value;
+            document.getElementById('displayTitle').innerText = document.getElementById('eventTitleInput').value;
+            document.getElementById('displayOwner').innerText = document.getElementById('ownerInput').value;
+        }
+
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function downloadImageOffline() {
+            const scale = 2, width = 480, t = themes[currentTheme];
+            const gameName = document.getElementById('gameNameInput').value.trim();
+            const channelName = document.getElementById('channelNameInput').value.trim() || "قناة وك";
+            const eventTitle = document.getElementById('eventTitleInput').value.trim() || "ساحة التحدي";
+            const subTitle = stageTitles[currentMatchesCount];
+            const ownerName = document.getElementById('ownerInput').value.trim() || "rowad";
+            const headerHeight = gameName ? 125 : 95;
+            const colsHeaderHeight = currentMatchesCount === 0 ? 0 : 28;
+            const rowHeight = 36, rowGap = 6;
+            const bodyHeight = currentMatchesCount === 0 ? 180 : currentMatchesCount * (rowHeight + rowGap);
+            const footerHeight = 40;
+            const totalHeight = headerHeight + colsHeaderHeight + bodyHeight + footerHeight + 20;
+            const canvas = document.createElement('canvas');
+            canvas.width = width * scale;
+            canvas.height = totalHeight * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.fillStyle = t.cardBg;
+            roundRect(ctx, 0, 0, width, totalHeight, 14);
+            ctx.fill();
+            ctx.strokeStyle = t.border;
+            ctx.lineWidth = 2;
+            roundRect(ctx, 1, 1, width - 2, totalHeight - 2, 14);
+            ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let yCursor = 16;
+            if (gameName) {
+                ctx.font = 'bold 15px sans-serif';
+                const badgeW = Math.max(95, ctx.measureText(gameName).width + 36);
+                const badgeX = (width - badgeW) / 2;
+                ctx.fillStyle = t.badgeBg;
+                roundRect(ctx, badgeX, yCursor, badgeW, 28, 14);
+                ctx.fill();
+                ctx.strokeStyle = t.accent;
+                ctx.lineWidth = 1;
+                roundRect(ctx, badgeX, yCursor, badgeW, 28, 14);
+                ctx.stroke();
+                ctx.fillStyle = t.accent;
+                ctx.fillText(gameName, width / 2, yCursor + 14);
+                yCursor += 38;
+            }
+            ctx.font = 'bold 13px sans-serif';
+            ctx.fillStyle = t.accent;
+            ctx.fillText(channelName, width / 2, yCursor + 8);
+            yCursor += 24;
+            ctx.font = 'bold 21px sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(eventTitle, width / 2, yCursor + 12);
+            yCursor += 26;
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillStyle = t.sub;
+            ctx.fillText(subTitle, width / 2, yCursor + 8);
+            yCursor += 20;
+            ctx.strokeStyle = t.border;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(14, yCursor);
+            ctx.lineTo(width - 14, yCursor);
+            ctx.stroke();
+            yCursor += 12;
+            if (currentMatchesCount === 0) {
+                const boxX = 16, boxW = width - 32, boxH = 155;
+                ctx.fillStyle = t.badgeBg;
+                roundRect(ctx, boxX, yCursor, boxW, boxH, 12);
+                ctx.fill();
+                ctx.strokeStyle = t.accent;
+                ctx.lineWidth = 2;
+                roundRect(ctx, boxX, yCursor, boxW, boxH, 12);
+                ctx.stroke();
+                ctx.font = '38px sans-serif';
+                ctx.fillText('🏆', width / 2, yCursor + 38);
+                ctx.font = 'bold 15px sans-serif';
+                ctx.fillStyle = t.sub;
+                ctx.fillText('الفائز بالمركز الأول', width / 2, yCursor + 80);
+                ctx.font = 'bold 28px sans-serif';
+                ctx.fillStyle = t.accent;
+                ctx.fillText(matchesData[0]?.a || "", width / 2, yCursor + 120);
+            } else {
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillStyle = t.sub;
+                ctx.fillText('A', width - 125, yCursor + 8);
+                ctx.fillText('B', 110, yCursor + 8);
+                yCursor += 22;
+                const padX = 12, rowW = width - padX * 2, idxW = 32, vsW = 38;
+                const sideW = (rowW - idxW - vsW) / 2;
+                matchesData.forEach((match, index) => {
+                    const rowX = padX, rowY = yCursor;
+                    ctx.fillStyle = t.rowBg;
+                    roundRect(ctx, rowX, rowY, rowW, rowHeight, 8);
+                    ctx.fill();
+                    const idxX = rowX + rowW - idxW;
+                    ctx.fillStyle = t.idxBg;
+                    ctx.fillRect(idxX, rowY + 1, idxW - 1, rowHeight - 2);
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillStyle = t.sub;
+                    ctx.fillText((index + 1).toString().padStart(2, '0'), idxX + idxW / 2, rowY + rowHeight / 2);
+                    const sideAX = idxX - sideW;
+                    if (match.winner === 'a') {
+                        ctx.fillStyle = 'rgba(6, 214, 160, 0.28)';
+                        ctx.fillRect(sideAX, rowY + 1, sideW, rowHeight - 2);
+                    }
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.fillStyle = match.winner === 'a' ? '#06d6a0' : '#edf2f7';
+                    ctx.fillText(match.a, sideAX + sideW / 2, rowY + rowHeight / 2, sideW - 10);
+                    const vsX = sideAX - vsW;
+                    ctx.fillStyle = t.vsBg;
+                    ctx.fillRect(vsX, rowY + 1, vsW, rowHeight - 2);
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillStyle = t.sub;
+                    ctx.fillText('VS', vsX + vsW / 2, rowY + rowHeight / 2);
+                    const sideBX = rowX;
+                    if (match.b === BYE_TEXT) {
+                        ctx.fillStyle = t.badgeBg;
+                        ctx.fillRect(sideBX + 1, rowY + 1, sideW - 1, rowHeight - 2);
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.fillStyle = t.accent;
+                    } else {
+                        if (match.winner === 'b') {
+                            ctx.fillStyle = 'rgba(6, 214, 160, 0.28)';
+                            ctx.fillRect(sideBX + 1, rowY + 1, sideW - 1, rowHeight - 2);
+                        }
+                        ctx.font = 'bold 14px sans-serif';
+                        ctx.fillStyle = match.winner === 'b' ? '#06d6a0' : '#edf2f7';
+                    }
+                    ctx.fillText(match.b, sideBX + sideW / 2, rowY + rowHeight / 2, sideW - 10);
+                    ctx.strokeStyle = t.rowBorder;
+                    ctx.lineWidth = 1;
+                    roundRect(ctx, rowX, rowY, rowW, rowHeight, 8);
+                    ctx.stroke();
+                    yCursor += rowHeight + rowGap;
+                });
+            }
+            const link = document.createElement('a');
+            link.download = `wok-challenge-${currentMatchesCount}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        initEmptyMatches(32);
+        setTheme('blue');
+    </script>
+</body>
+</html>

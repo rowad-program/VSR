@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ساحة التحدي - قناة وك</title>
+    <meta name="theme-color" content="#0d1b2a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="تنظيم البطولات">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <title>تنظيم البطولات</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -11,19 +18,101 @@
             background-color: var(--bg-main, #0d1b2a);
             color: #fff;
             margin: 0;
-            padding: 10px;
+            padding: 6px 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
         }
+        #main-site {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .welcome-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: radial-gradient(circle at top, #263b5b 0%, #0d1b2a 62%, #070e18 100%);
+        }
+        .welcome-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 42px 24px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 26px;
+            background: rgba(255,255,255,.07);
+            box-shadow: 0 18px 55px rgba(0,0,0,.35);
+            backdrop-filter: blur(10px);
+        }
+        .welcome-logo {
+            display: block;
+            width: 148px;
+            height: 148px;
+            object-fit: contain;
+            object-position: center;
+            margin: 0 auto 22px;
+            border-radius: 28px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.38);
+            background: #080808;
+        }
+        .welcome-title {
+            margin: 0 auto 14px;
+            max-width: 330px;
+            color: #fff;
+            font-size: clamp(22px, 5.5vw, 29px);
+            line-height: 1.65;
+            font-weight: 800;
+        }
+        .welcome-subtitle {
+            margin: 0 0 24px;
+            color: #d8e5f5;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        .welcome-role {
+            display: inline-block;
+            padding: 9px 30px;
+            margin-bottom: 24px;
+            border-radius: 40px;
+            background: #b51f62;
+            color: #fff;
+            font-size: 25px;
+            font-weight: 800;
+            box-shadow: 0 5px 18px rgba(181,31,98,.3);
+        }
+        .welcome-name {
+            margin: 0 0 30px;
+            color: #fff;
+            font-size: clamp(38px, 10vw, 58px);
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+        .welcome-enter {
+            padding: 12px 34px;
+            border: 0;
+            border-radius: 30px;
+            background: #4cc9f0;
+            color: #0d1b2a;
+            font: inherit;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .hidden { display: none !important; }
         .controls {
             background: #1b263b;
-            padding: 12px;
+            padding: 12px 10px;
             border-radius: 12px;
             margin-bottom: 16px;
             width: 100%;
-            max-width: 480px;
+            max-width: 760px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
         .controls h3 {
@@ -52,11 +141,166 @@
             color: #fff;
             border: 1px solid #415a77;
         }
-        .stage-tabs, .theme-tabs {
+        .field-row { display: flex; gap: 8px; }
+        .field-row > div { flex: 1; min-width: 0; }
+        .field-row > .dt-date { flex: 1.3; }
+        .dt-field {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            height: 42px;
+            padding: 0 8px 0 10px;
+            margin-bottom: 10px;
+            background: #0d1b2a;
+            border: 1px solid #415a77;
+            border-radius: 8px;
+        }
+        .dt-text {
+            direction: ltr;
+            unicode-bidi: isolate;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            pointer-events: none;
+        }
+        .dt-text.placeholder { color: #6b7f99; font-weight: 500; }
+        .dt-icon {
+            flex: 0 0 auto;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 18px 18px;
+            pointer-events: none;
+        }
+        .dt-icon.cal {
+            background-color: #4cc9f0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d1b2a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E");
+        }
+        .dt-icon.clk {
+            background-color: #ffd166;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d1b2a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3.5 2'/%3E%3C/svg%3E");
+        }
+        .controls .dt-field input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            opacity: 0;
+            border: 0;
+            cursor: pointer;
+            color-scheme: dark;
+        }
+        .controls .dt-field input::-webkit-calendar-picker-indicator {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 26px 14px;
+            margin: 4px 0 8px;
+            border: 2px dashed var(--accent-color, #ffd166);
+            border-radius: 12px;
+            background: var(--badge-bg, rgba(255, 209, 102, 0.14));
+        }
+        .empty-state .es-icon { font-size: 34px; margin-bottom: 6px; }
+        .empty-state .es-title { color: var(--accent-color, #ffd166); font-weight: 800; font-size: 17px; margin-bottom: 6px; }
+        .empty-state .es-hint { color: var(--sub-color, #4cc9f0); font-size: 12px; line-height: 1.8; font-weight: 700; }
+        @media (max-width: 360px) {
+            .dt-text { font-size: 12.5px; }
+            .dt-field { padding: 0 6px 0 8px; }
+        }
+        .stage-tabs {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 5px;
             margin-bottom: 12px;
+        }
+        .theme-picker {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .theme-picker-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 13px;
+            margin: 0 0 7px;
+            border: 1px solid var(--accent-color, #4cc9f0);
+            border-radius: 10px;
+            background: #0d1b2a;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: right;
+        }
+        .theme-picker-current {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .theme-picker-trigger .theme-chevron {
+            transition: transform .22s ease;
+            font-size: 17px;
+        }
+        .theme-picker-trigger[aria-expanded="true"] .theme-chevron {
+            transform: rotate(180deg);
+        }
+        .theme-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
+            padding: 9px;
+            margin: 0 0 12px;
+            background: rgba(5, 15, 28, .96);
+            border: 1px solid #415a77;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-5px);
+            pointer-events: none;
+            transition: max-height .28s ease, opacity .2s ease, transform .2s ease;
+        }
+        .theme-tabs.open {
+            max-height: 260px;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .theme-tab {
+            min-height: 38px;
+            padding: 8px 5px;
+            background: #0d1b2a;
+            color: #a0aec0;
+            border: 1px solid #415a77;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            margin: 0;
+        }
+        .theme-tab.active {
+            background: var(--accent-color, #4cc9f0);
+            color: #0d1b2a;
+            border-color: var(--accent-color, #4cc9f0);
+            box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset;
         }
         .stage-tab, .theme-tab {
             padding: 8px 4px;
@@ -95,14 +339,29 @@
 
         #capture-area {
             width: 100%;
-            max-width: 480px;
+            max-width: 760px;
             background: var(--bg-card, #0b132b);
             border: 2px solid var(--border-color, #3a506b);
             border-radius: 14px;
-            padding: 14px 12px;
+            padding: 12px 6px;
             position: relative;
             direction: rtl;
+            isolation: isolate;
+            overflow: hidden;
         }
+        #capture-area::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: var(--watermark-opacity, 0);
+            background-image: var(--watermark-image, none);
+            background-repeat: no-repeat;
+            background-position: center 58%;
+            background-size: min(78%, 340px) auto;
+        }
+        #capture-area > * { position: relative; z-index: 1; }
         .header {
             display: flex;
             flex-direction: column;
@@ -113,7 +372,7 @@
             margin-bottom: 12px;
         }
         .game-badge {
-            font-size: 15px;
+            font-size: 21px;
             font-weight: bold;
             color: var(--accent-color, #ffd166);
             background: var(--badge-bg, rgba(255, 209, 102, 0.14));
@@ -121,8 +380,8 @@
             padding: 4px 18px;
             border-radius: 20px;
             margin-bottom: 8px;
-            min-height: 28px;
-            min-width: 90px;
+            min-height: 36px;
+            min-width: 110px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -145,6 +404,31 @@
             font-size: 12px;
             font-weight: bold;
         }
+        .event-date-time {
+            margin-top: 7px;
+            color: var(--sub-color, #4cc9f0);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .event-date-time:empty { display: none; }
+        .match-table-frame { position: relative; }
+        .match-table-frame .columns-header,
+        .match-table-frame #matches-container { margin-left: 26px; margin-right: 26px; width: auto; }
+        .wolf-side-logo {
+            position: absolute;
+            width: 23px;
+            height: 23px;
+            object-fit: contain;
+            border-radius: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: .95;
+            background: #080808;
+            box-shadow: 0 2px 8px rgba(0,0,0,.28);
+        }
+        .wolf-side-logo.left { left: 0; }
+        .wolf-side-logo.right { right: 0; }
         .columns-header {
             display: flex;
             justify-content: space-between;
@@ -153,10 +437,16 @@
             font-weight: bold;
             font-size: 14px;
         }
+        #matches-container {
+            width: 100%;
+            height: auto;
+        }
         .match-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
+            min-height: 42px;
             background: var(--row-bg, rgba(27, 38, 59, 0.8));
             margin-bottom: 6px;
             border-radius: 8px;
@@ -165,21 +455,28 @@
         }
         .side {
             flex: 1;
+            min-width: 0;
             text-align: center;
             padding: 8px 4px;
             font-size: 13px;
             font-weight: bold;
             color: #edf2f7;
             min-height: 20px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            overflow: visible;
+            overflow-wrap: anywhere;
+            text-overflow: clip;
+            line-height: 1.35;
             cursor: pointer;
         }
+        #matches-container.compact .match-row { min-height: 36px; margin-bottom: 4px; }
+        #matches-container.compact .side { padding: 5px 3px; font-size: 12px; }
+        #matches-container.compact .vs-badge,
+        #matches-container.compact .index-badge { padding-top: 5px; padding-bottom: 5px; }
         .side.winner {
-            background: rgba(6, 214, 160, 0.28);
-            color: #06d6a0;
-            box-shadow: inset 0 0 6px rgba(6, 214, 160, 0.35);
+            background: var(--winner-bg, rgba(6, 214, 160, 0.28));
+            color: var(--winner-color, #06d6a0);
+            box-shadow: inset 0 0 6px var(--winner-glow, rgba(6, 214, 160, 0.35));
         }
         .side.bye-slot {
             color: var(--accent-color, #ffd166);
@@ -215,7 +512,8 @@
             border-radius: 12px;
             margin: 12px 0;
         }
-        .champion-trophy { font-size: 48px; margin-bottom: 8px; }
+        .champion-trophy { margin-bottom: 8px; display:flex; align-items:center; justify-content:center; }
+        .champion-trophy svg { width: 132px; height: auto; display:block; filter: drop-shadow(0 6px 14px rgba(0,0,0,.45)); }
         .champion-label { color: var(--sub-color, #4cc9f0); font-size: 15px; margin-bottom: 6px; }
         .champion-name { color: var(--accent-color, #ffd166); font-size: 28px; font-weight: bold; min-height: 38px; }
         .footer {
@@ -227,49 +525,151 @@
             margin-top: 12px;
             font-size: 10px;
             color: #a0aec0;
+            gap: 8px;
+            flex-wrap: wrap;
         }
+        .player-count { color: #4cc9f0; font-weight: 800; margin: -3px 0 8px; font-size: 13px; }
+        .duplicate-warning { color: #ff9aa9; font-size: 12px; margin: -4px 0 8px; display:none; }
+        .duplicate-warning.show { display:block; }
+        .install-button { background:#06d6a0; color:#0d1b2a; font-weight:800; cursor:pointer; }
+        @media (max-width: 420px) {
+            .match-table-frame .columns-header,
+            .match-table-frame #matches-container { margin-left: 22px; margin-right: 22px; }
+            .wolf-side-logo { width:19px; height:19px; }
+            .footer { justify-content:center; text-align:center; }
+        }
+    
+        /* تعديلات: تقليل فراغ اللوحة، عنوان اللوحة بالشعارين، الفائز */
+        .theme-tabs { margin: 0; padding: 0; border-width: 0; }
+        .theme-tabs.open { margin: 0 0 8px; padding: 9px; border-width: 1px; }
+        .theme-picker { margin-bottom: 8px; }
+        .theme-picker-trigger { margin: 0 0 6px; }
+        .controls h3 { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .panel-logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+        @media (max-width: 380px) { .controls h3 { gap: 6px; font-size: 15px; } .panel-logo { width: 21px; height: 21px; border-radius: 6px; } }
+        .event-date-time { direction: ltr; unicode-bidi: isolate; }
+        .champion-trophy svg { width: 150px; }
+        .champion-label { font-size: 18px; font-weight: bold; }
+        .champion-name { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .champion-name svg { width: 24px; height: 24px; flex: none; }
+    
+        /* ترويسة بإطار: اللعبة والفعالية بخط كبير، وتحتها سطر القناة • المرحلة • التاريخ */
+        .header { gap: 8px; }
+        .title-frame { width: calc(100% - 20px); border: 2px solid var(--accent-color, #ffd166); background: var(--badge-bg, rgba(255,209,102,.15)); border-radius: 14px; padding: 8px 12px; text-align: center; box-shadow: 0 0 14px var(--champ-glow, transparent); }
+        .title-frame .game-badge { display: block; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; color: var(--accent-color, #ffd166); font-size: 24px; font-weight: 800; line-height: 1.3; }
+        .title-frame .game-badge:empty, .title-frame h3:empty { display: none; }
+        .title-frame h3 { margin: 0; color: #fff; font-size: 27px; line-height: 1.3; overflow-wrap: anywhere; }
+        .title-frame .game-badge:not(:empty) + h3:not(:empty) { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--accent-color, #ffd166); }
+        .header-meta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; color: var(--sub-color, #4cc9f0); }
+        .header-meta > * { margin: 0; padding: 0; background: none; border: 0; font-size: 12px; font-weight: 700; color: inherit; }
+        .header-meta > :not(:empty):not([style*="none"]) ~ :not(:empty):not([style*="none"])::before { content: "•"; margin: 0 8px; opacity: .8; }
+            .header-meta > .event-date-time { direction: rtl; unicode-bidi: isolate; }
     </style>
 </head>
 <body>
 
+    <section id="welcome-screen" class="welcome-screen">
+        <div class="welcome-card">
+            <img class="welcome-logo"
+                 data-wolf
+                 alt="شعار تطبيق WOLF Qanawat">
+            <h1 class="welcome-title">أهلاً بكم في برنامج تنظيم بطولات ألعاب ولف اللوحية</h1>
+            <div class="welcome-role">مساعد</div>
+            <h2 class="welcome-name">Rowad</h2>
+            <button class="welcome-enter" onclick="enterSite()">دخول</button>
+        </div>
+    </section>
+
+    <div id="main-site" class="hidden">
     <div class="controls">
-        <h3>إدارة البطولة والمواجهات</h3>
+        <h3><img data-wolf class="panel-logo" alt=""><span>إدارة البطولة والمواجهات</span><img data-wolf class="panel-logo" alt=""></h3>
 
-        <label>اختر الثيم (المظهر والألوان):</label>
-        <div class="theme-tabs">
-            <button id="theme-blue" class="theme-tab active" onclick="setTheme('blue')">👑 ملكي أزرق</button>
-            <button id="theme-gold" class="theme-tab" onclick="setTheme('gold')">⭐ ذهبي فاخر</button>
-            <button id="theme-neon" class="theme-tab" onclick="setTheme('neon')">⚡ نيون حماسي</button>
-            <button id="theme-emerald" class="theme-tab" onclick="setTheme('emerald')">🌿 أخضر رياضي</button>
+        <label>المظهر والثيمات:</label>
+        <div class="theme-picker" id="themePicker">
+            <button type="button" class="theme-picker-trigger" id="themePickerTrigger"
+                    onclick="toggleThemeMenu()" aria-expanded="false" aria-controls="themeTabs">
+                <span class="theme-picker-current">
+                    <span>🎨</span>
+                    <span id="currentThemeLabel">👑 ملكي أزرق</span>
+                </span>
+                <span class="theme-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="theme-tabs" id="themeTabs">
+                <button type="button" id="theme-blue" class="theme-tab active" onclick="setTheme('blue')">👑 ملكي أزرق</button>
+                <button type="button" id="theme-gold" class="theme-tab" onclick="setTheme('gold')">⭐ ذهبي فاخر</button>
+                <button type="button" id="theme-neon" class="theme-tab" onclick="setTheme('neon')">⚡ نيون حماسي</button>
+                <button type="button" id="theme-emerald" class="theme-tab" onclick="setTheme('emerald')">🌿 أخضر رياضي</button>
+                <button type="button" id="theme-madrid" class="theme-tab" onclick="setTheme('madrid')">🤍 ريال مدريد</button>
+                <button type="button" id="theme-barcelona" class="theme-tab" onclick="setTheme('barcelona')">🔵🔴 برشلونة</button>
+                <button type="button" id="theme-pink" class="theme-tab" onclick="setTheme('pink')">🌸 زهري</button>
+            </div>
         </div>
 
-        <label>اختر مرحلة البطولة:</label>
-        <div class="stage-tabs">
-            <button id="stage-32" class="stage-tab active" onclick="setStage(32)">32 مباراة</button>
-            <button id="stage-16" class="stage-tab" onclick="setStage(16)">16 مباراة</button>
-            <button id="stage-8" class="stage-tab" onclick="setStage(8)">دوري 8</button>
-            <button id="stage-4" class="stage-tab" onclick="setStage(4)">دوري 4</button>
-            <button id="stage-2" class="stage-tab" onclick="setStage(2)">دوري 2</button>
-            <button id="stage-1" class="stage-tab" onclick="setStage(1)">النهائي</button>
-            <button id="stage-0" class="stage-tab" onclick="setStage(0)">الفائز 🏆</button>
+        <label>اختر مرحلة التحدي:</label>
+        <div class="theme-picker" id="stagePicker">
+            <button type="button" class="theme-picker-trigger" id="stagePickerTrigger"
+                    onclick="toggleStageMenu()" aria-expanded="false" aria-controls="stageOptions">
+                <span class="theme-picker-current">
+                    <span>🏆</span>
+                    <span id="currentStageLabel">دوري 32</span>
+                </span>
+                <span class="theme-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="theme-tabs" id="stageOptions">
+                <button type="button" id="stage-32" class="theme-tab stage-tab active" onclick="setStage(32)">دوري 32</button>
+                <button type="button" id="stage-16" class="theme-tab stage-tab" onclick="setStage(16)">دوري 16</button>
+                <button type="button" id="stage-8" class="theme-tab stage-tab" onclick="setStage(8)">دوري 8</button>
+                <button type="button" id="stage-4" class="theme-tab stage-tab" onclick="setStage(4)">دوري 4</button>
+                <button type="button" id="stage-2" class="theme-tab stage-tab" onclick="setStage(2)">دوري 2</button>
+                <button type="button" id="stage-1" class="theme-tab stage-tab" onclick="setStage(1)">النهائي</button>
+                <button type="button" id="stage-0" class="theme-tab stage-tab" onclick="setStage(0)">الفائز 🏆</button>
+            </div>
         </div>
 
-        <label>اسم اللعبة (يظهر في أعلى الجدول):</label>
-        <input type="text" id="gameNameInput" value="" placeholder="اكتب اسم اللعبة هنا..." oninput="updateText()">
-
-        <label>اسم القناة:</label>
-        <input type="text" id="channelNameInput" value="قناة وك" oninput="updateText()">
+        <div class="field-row">
+            <div>
+                <label>اسم اللعبة:</label>
+                <input type="text" autocomplete="off" id="gameNameInput" value="" placeholder="اسم اللعبة" oninput="updateText()">
+            </div>
+            <div>
+                <label>اسم القناة:</label>
+                <input type="text" autocomplete="off" id="channelNameInput" value="" oninput="updateText()">
+            </div>
+        </div>
 
         <label>عنوان الفعالية:</label>
-        <input type="text" id="eventTitleInput" value="ساحة التحدي" oninput="updateText()">
+        <input type="text" autocomplete="off" id="eventTitleInput" value="" oninput="updateText()">
 
         <label>اسم صاحب الفعالية:</label>
-        <input type="text" id="ownerInput" value="rowad" oninput="updateText()">
+        <input type="text" autocomplete="off" id="ownerInput" value="rowad" oninput="updateText()">
+
+        <div class="field-row">
+            <div class="dt-date">
+                <label>تاريخ الفعالية:</label>
+                <div class="dt-field">
+                    <span class="dt-text placeholder" id="eventDateText">dd/mm/yyyy</span>
+                    <span class="dt-icon cal" aria-hidden="true"></span>
+                    <input type="date" id="eventDateInput" aria-label="تاريخ الفعالية" oninput="updateText()" onchange="updateText()" onclick="openPicker(this)">
+                </div>
+            </div>
+            <div>
+                <label>وقت الفعالية:</label>
+                <div class="dt-field">
+                    <span class="dt-text placeholder" id="eventTimeText">--:--</span>
+                    <span class="dt-icon clk" aria-hidden="true"></span>
+                    <input type="time" id="eventTimeInput" aria-label="وقت الفعالية" oninput="updateText()" onchange="updateText()" onclick="openPicker(this)">
+                </div>
+            </div>
+        </div>
 
         <div id="names-input-section">
-            <label id="playersInputLabel">أسماء المشاركين (64 خانة فارغة - كل اسم في سطر):</label>
+            <label id="playersInputLabel">أسماء المشاركين (كل اسم في سطر):</label>
             <textarea id="playersInput" rows="4" placeholder="اكتب أو الصق الأسماء هنا..." oninput="updatePlayersFromText()"></textarea>
+            <div class="player-count" id="playerCount">عدد الأسماء: 0</div>
+            <div class="duplicate-warning" id="duplicateWarning" role="alert"></div>
         </div>
+
+        <button type="button" class="install-button" id="installAppButton" onclick="installApp()">تثبيت البرنامج على الجهاز</button>
 
         <div class="btn-group">
             <button class="secondary" onclick="shufflePlayers()">قرعة عشوائية 🎲</button>
@@ -281,32 +681,57 @@
 
     <div id="capture-area">
         <div class="header">
-            <div class="game-badge" id="displayGame"></div>
-            <div class="channel-tag" id="displayChannel">قناة وك</div>
-            <div class="title-center">
-                <h3 id="displayTitle">ساحة التحدي</h3>
-                <p id="displaySub">المواجهات · دور الـ 64 · 32 مباراة</p>
+            <div class="title-frame" id="titleFrame">
+                <div class="game-badge" id="displayGame"></div>
+                <h3 id="displayTitle"></h3>
+            </div>
+            <div class="header-meta">
+                <span class="channel-tag" id="displayChannel"></span>
+                <span id="displaySub">دوري 32</span>
+                <span class="event-date-time" id="displayEventDateTime"></span>
             </div>
         </div>
 
-        <div class="columns-header" id="columnsHeader">
-            <span>A</span>
-            <span>B</span>
+        <div class="match-table-frame">
+            <img class="wolf-side-logo left" data-wolf alt="شعار WOLF">
+            <img class="wolf-side-logo right" data-wolf alt="شعار WOLF">
+            <div class="columns-header" id="columnsHeader">
+                <span>صاحب الجلسة</span>
+                <span>الخصم</span>
+            </div>
+            <div id="matches-container"></div>
         </div>
-
-        <div id="matches-container"></div>
 
         <div class="footer">
             <span>صاحب الفعالية: <span id="displayOwner">rowad</span></span>
             <span>Designed & Developed by rowad</span>
         </div>
     </div>
+    </div>
 
     <script>
         let currentMatchesCount = 32;
         let matchesData = [];
+        // قائمة المشاركين الأصلية تبقى مستقلة عن نتائج كل مرحلة.
+        let originalPlayersText = '';
+        const stageSnapshots = {};
         let currentTheme = 'blue';
         const BYE_TEXT = "تأهل تلقائي ⭐";
+        const WOLF_LOGO_URL = "data:image/png;base64,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";
+        let deferredInstallPrompt = null;
+
+        // كأس ذهبي فخم بشعار WOLF؛ يُستخدم في الصفحة وفي الصورة المحفوظة، والتوهج بلون الثيم.
+        function trophySvg(glow) {
+            return `<svg viewBox="0 0 160 190" width="160" height="190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="كأس البطولة"><defs><radialGradient id="tGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${glow}" stop-opacity=".6"/><stop offset=".6" stop-color="${glow}" stop-opacity=".18"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient><linearGradient id="tGold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a5a0c"/><stop offset=".2" stop-color="#f7d774"/><stop offset=".38" stop-color="#fff6c8"/><stop offset=".55" stop-color="#e3b02d"/><stop offset=".78" stop-color="#b57a12"/><stop offset="1" stop-color="#f1cb5a"/></linearGradient><linearGradient id="tGoldV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a8"/><stop offset=".5" stop-color="#e8b730"/><stop offset="1" stop-color="#9a6410"/></linearGradient><clipPath id="tLogoClip"><circle cx="80" cy="76" r="21"/></clipPath></defs><circle cx="80" cy="92" r="80" fill="url(#tGlow)"/><ellipse cx="87.3" cy="6.9" rx="6.5" ry="2.6" transform="rotate(14 87.3 6.9)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="94.1" cy="9.5" rx="6.5" ry="2.6" transform="rotate(28 94.1 9.5)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="100.1" cy="13.7" rx="6.5" ry="2.6" transform="rotate(42 100.1 13.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="104.9" cy="19.2" rx="6.5" ry="2.6" transform="rotate(56 104.9 19.2)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="108.2" cy="25.7" rx="6.5" ry="2.6" transform="rotate(70 108.2 25.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="72.7" cy="6.9" rx="6.5" ry="2.6" transform="rotate(-14 72.7 6.9)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="65.9" cy="9.5" rx="6.5" ry="2.6" transform="rotate(-28 65.9 9.5)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="59.9" cy="13.7" rx="6.5" ry="2.6" transform="rotate(-42 59.9 13.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="55.1" cy="19.2" rx="6.5" ry="2.6" transform="rotate(-56 55.1 19.2)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="51.8" cy="25.7" rx="6.5" ry="2.6" transform="rotate(-70 51.8 25.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><polygon points="80.00,15.00 81.82,19.49 86.66,19.84 82.95,22.96 84.11,27.66 80.00,25.10 75.89,27.66 77.05,22.96 73.34,19.84 78.18,19.49" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".6"/><path d="M42 40 H26 Q14 40 14 53 Q14 84 46 94" fill="none" stroke="url(#tGold)" stroke-width="7" stroke-linecap="round"/><path d="M42 40 H26 Q14 40 14 53 Q14 84 46 94" fill="none" stroke="#fff6c8" stroke-width="1.6" opacity=".6" stroke-linecap="round"/><path d="M118 40 H134 Q146 40 146 53 Q146 84 114 94" fill="none" stroke="url(#tGold)" stroke-width="7" stroke-linecap="round"/><path d="M118 40 H134 Q146 40 146 53 Q146 84 114 94" fill="none" stroke="#fff6c8" stroke-width="1.6" opacity=".6" stroke-linecap="round"/><path d="M38 30 H122 V68 Q122 122 80 134 Q38 122 38 68 Z" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><rect x="34" y="26" width="92" height="9" rx="4.5" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width="1.5"/><path d="M46 40 Q47 98 74 124 Q54 98 53 40 Z" fill="#fff" opacity=".35"/><ellipse cx="108" cy="52" rx="2" ry="9" fill="#fff" opacity=".25"/><circle cx="80" cy="76" r="27.5" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width="1"/><circle cx="80" cy="76" r="23.5" fill="#080808"/><image href="${WOLF_LOGO_URL}" x="58" y="54" width="44" height="44" preserveAspectRatio="xMidYMid slice" clip-path="url(#tLogoClip)"/><circle cx="80" cy="76" r="23.5" fill="none" stroke="#fff3b0" stroke-width="1.5"/><path d="M69 132 H91 L88 152 H72 Z" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><ellipse cx="80" cy="140" rx="14" ry="4.5" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width="1.2"/><rect x="52" y="150" width="56" height="12" rx="4" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><rect x="38" y="161" width="84" height="19" rx="5" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><rect x="62" y="166" width="36" height="9" rx="2" fill="#fff0b0" stroke="#8a5a0c" stroke-width="1"/><path d="M67 170.5 H93" stroke="#b57a12" stroke-width="1.2"/></svg>`;
+        }
+        const STAR_SVG = (() => {
+            const p = [];
+            for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 5.4 : 12; p.push((12 + r * Math.cos(a)).toFixed(2) + ',' + (12 + r * Math.sin(a)).toFixed(2)); }
+            return `<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><defs><linearGradient id="starG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#f6c343"/><stop offset="1" stop-color="#b57a12"/></linearGradient></defs><polygon points="${p.join(' ')}" fill="url(#starG)" stroke="#8a5a0c" stroke-width=".8"/></svg>`;
+        })();
+        // التاريخ والوقت بالصيغة: 18/11/2026 | 06:40 ص
+        function fmtDate(v) { if (!v) return ''; const [y, m, d] = v.split('-'); return `${d}/${m}/${y}`; }
+        function fmtTime(v) { if (!v) return ''; const [H, M] = v.split(':'); const h = +H; return `${String(((h + 11) % 12) + 1).padStart(2, '0')}:${M} ${h < 12 ? 'ص' : 'م'}`; }
 
         const themes = {
             blue: {
@@ -332,24 +757,70 @@
                 accent: '#00ffaa', sub: '#79efd2', rowBg: 'rgba(6, 61, 43, 0.85)',
                 rowBorder: '#0e7a57', vsBg: '#0a4d38', idxBg: '#02261a',
                 badgeBg: 'rgba(0, 255, 170, 0.15)', champGlow: 'rgba(0,255,170,0.2)'
+            },
+            madrid: {
+                mainBg: '#101b35', cardBg: '#172746', border: '#d7bd70',
+                accent: '#f4d77b', sub: '#e8edf7', rowBg: 'rgba(35, 54, 87, 0.62)',
+                rowBorder: '#536b91', vsBg: '#263d65', idxBg: '#101b35',
+                badgeBg: 'rgba(244, 215, 123, 0.16)', champGlow: 'rgba(244,215,123,0.22)',
+                winnerBg: 'rgba(244,215,123,0.24)', winnerColor: '#ffe49a', winnerGlow: 'rgba(244,215,123,0.28)',
+                watermark: 'madrid'
+            },
+            barcelona: {
+                mainBg: '#160d2b', cardBg: '#241039', border: '#a51d45',
+                accent: '#edc65a', sub: '#58a9e8', rowBg: 'rgba(48, 17, 55, 0.62)',
+                rowBorder: '#71304f', vsBg: '#142e59', idxBg: '#160d2b',
+                badgeBg: 'rgba(165, 29, 69, 0.22)', champGlow: 'rgba(237,198,90,0.2)',
+                winnerBg: 'rgba(237,198,90,0.22)', winnerColor: '#ffe08a', winnerGlow: 'rgba(237,198,90,0.28)',
+                watermark: 'barcelona'
+            },
+            pink: {
+                mainBg: '#2a0a1e', cardBg: '#3a0f2a', border: '#ff5fa8',
+                accent: '#ff8fc7', sub: '#ffc2e0', rowBg: 'rgba(88, 22, 60, 0.72)',
+                rowBorder: '#a63a76', vsBg: '#6b1f4a', idxBg: '#2a0a1e',
+                badgeBg: 'rgba(255, 143, 199, 0.16)', champGlow: 'rgba(255,143,199,0.26)',
+                winnerBg: 'rgba(255,143,199,0.28)', winnerColor: '#ffd6ea', winnerGlow: 'rgba(255,143,199,0.32)'
             }
         };
 
         const stageTitles = {
-            32: "المواجهات · دور الـ 64 · 32 مباراة",
-            16: "المواجهات · دور الـ 32 · 16 مباراة",
-            8: "المواجهات · دوري الـ 8 (ثمن النهائي)",
-            4: "المواجهات · دوري الـ 4 (ربع النهائي)",
-            2: "المواجهات · دوري الـ 2 (نصف النهائي)",
-            1: "المواجهة النهائية · تحديد البطل",
-            0: "بطل ساحة التحدي 🏆"
+            32: "دوري 32",
+            16: "دوري 16",
+            8: "دوري 8 (ثمن النهائي)",
+            4: "دوري 4 (ربع النهائي)",
+            2: "دوري 2 (نصف النهائي)",
+            1: "المواجهة النهائية",
+            0: ""
         };
+
+        function toggleThemeMenu(forceState) {
+            const menu = document.getElementById('themeTabs');
+            const trigger = document.getElementById('themePickerTrigger');
+            const shouldOpen = typeof forceState === 'boolean'
+                ? forceState
+                : !menu.classList.contains('open');
+            menu.classList.toggle('open', shouldOpen);
+            trigger.setAttribute('aria-expanded', String(shouldOpen));
+        }
+
+        function toggleStageMenu(forceState) {
+            const menu = document.getElementById('stageOptions');
+            const trigger = document.getElementById('stagePickerTrigger');
+            const shouldOpen = typeof forceState === 'boolean'
+                ? forceState
+                : !menu.classList.contains('open');
+            menu.classList.toggle('open', shouldOpen);
+            trigger.setAttribute('aria-expanded', String(shouldOpen));
+        }
 
         function setTheme(themeName) {
             currentTheme = themeName;
             document.querySelectorAll('.theme-tab').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('theme-' + themeName);
             if (activeBtn) activeBtn.classList.add('active');
+            const selectedThemeText = activeBtn ? activeBtn.textContent.trim() : themeName;
+            document.getElementById('currentThemeLabel').textContent = selectedThemeText;
+            toggleThemeMenu(false);
             const t = themes[themeName];
             const root = document.documentElement;
             root.style.setProperty('--bg-main', t.mainBg);
@@ -363,7 +834,21 @@
             root.style.setProperty('--idx-bg', t.idxBg);
             root.style.setProperty('--badge-bg', t.badgeBg);
             root.style.setProperty('--champ-glow', t.champGlow);
+            root.style.setProperty('--winner-bg', t.winnerBg || 'rgba(6, 214, 160, 0.28)');
+            root.style.setProperty('--winner-color', t.winnerColor || '#06d6a0');
+            root.style.setProperty('--winner-glow', t.winnerGlow || 'rgba(6, 214, 160, 0.35)');
+            const watermarkSvg = t.watermark === 'madrid'
+                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 350"><path d="M150 8 L276 58 L260 210 Q240 292 150 340 Q60 292 40 210 L24 58 Z" fill="#d7bd70" fill-opacity=".24" stroke="#f4d77b" stroke-width="12"/><circle cx="150" cy="166" r="91" fill="none" stroke="#f4d77b" stroke-width="13"/><path d="M78 99 L222 233 M222 99 L78 233" stroke="#f4d77b" stroke-width="10"/><text x="150" y="185" text-anchor="middle" font-size="64" font-family="serif" font-weight="bold" fill="#ffffff">RM</text><path d="M95 24 L110 3 L130 22 L150 0 L170 22 L190 3 L205 24" fill="none" stroke="#f4d77b" stroke-width="10"/></svg>`
+                : t.watermark === 'barcelona'
+                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 350"><defs><clipPath id="shield"><path d="M150 12 L276 58 L260 210 Q240 292 150 340 Q60 292 40 210 L24 58 Z"/></clipPath></defs><path d="M150 12 L276 58 L260 210 Q240 292 150 340 Q60 292 40 210 L24 58 Z" fill="#a51d45" fill-opacity=".28" stroke="#edc65a" stroke-width="12"/><g clip-path="url(#shield)"><path d="M45 70 V280 M95 45 V315 M145 25 V330 M195 45 V315 M245 70 V280" stroke="#58a9e8" stroke-width="35" opacity=".8"/><path d="M25 145 H275" stroke="#edc65a" stroke-width="12"/><path d="M25 180 H275" stroke="#edc65a" stroke-width="12"/></g><text x="150" y="224" text-anchor="middle" font-size="62" font-family="sans-serif" font-weight="bold" fill="#ffffff" stroke="#160d2b" stroke-width="3" paint-order="stroke">FCB</text></svg>` : '';
+            root.style.setProperty('--watermark-image', watermarkSvg ? `url("data:image/svg+xml,${encodeURIComponent(watermarkSvg)}")` : 'none');
+            root.style.setProperty('--watermark-opacity', t.watermark ? '0.18' : '0');
             renderMatches();
+        }
+
+        function enterSite() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('main-site').classList.remove('hidden');
         }
 
         function initEmptyMatches(count) {
@@ -375,18 +860,94 @@
             for (let i = 0; i < count; i++) matchesData.push({ a: "", b: "", winner: null });
         }
 
-        function setStage(matchesCount) {
+        function cloneMatches(data) {
+            return data.map(match => ({ a: match.a || "", b: match.b || "", winner: match.winner || null }));
+        }
+
+        function saveCurrentStage() {
+            stageSnapshots[currentMatchesCount] = cloneMatches(matchesData);
+        }
+
+        function namesFromOriginalList() {
+            const seen = new Set();
+            const unique = [];
+            originalPlayersText.split(/\r?\n/).forEach(rawName => {
+                const name = rawName.trim();
+                if (!name) return;
+                const key = name.toLocaleLowerCase();
+                if (!seen.has(key)) { seen.add(key); unique.push(name); }
+            });
+            return unique;
+        }
+
+        function getDuplicateNames(text) {
+            const seen = new Set(), duplicates = new Set();
+            text.split(/\r?\n/).forEach(rawName => {
+                const name = rawName.trim();
+                if (!name) return;
+                const key = name.toLocaleLowerCase();
+                if (seen.has(key)) duplicates.add(name);
+                else seen.add(key);
+            });
+            return [...duplicates];
+        }
+
+        function fillStageFromNames(matchesCount, names) {
+            // أنشئ المواجهات التي تحتاجها الأسماء فعلياً فقط، مع احترام الحد الأعلى للمرحلة.
+            // عند وجود عدد فردي، يحصل اللاعب الأخير على تأهل تلقائي ولا نعرض خانات فارغة.
+            matchesData = [];
+            if (matchesCount === 0) {
+                matchesData.push({ a: names[0] || "", b: "", winner: null });
+                return;
+            }
+
+            const usableNames = names.slice(0, matchesCount * 2);
+            const actualMatches = Math.min(matchesCount, Math.ceil(usableNames.length / 2));
+            for (let i = 0; i < actualMatches; i++) {
+                const a = usableNames[i * 2] || "";
+                const b = usableNames[i * 2 + 1] || "";
+                const hasBye = Boolean(a) && !b;
+                matchesData.push({ a, b: hasBye ? BYE_TEXT : b, winner: hasBye ? 'a' : null });
+            }
+        }
+
+        function updatePlayersLabel() {
+            const label = document.getElementById('playersInputLabel');
+            const total = namesFromOriginalList().length;
+            const count = document.getElementById('playerCount');
+            if (count) count.textContent = `عدد الأسماء: ${total}`;
+            if (currentMatchesCount === 0) {
+                label.innerText = 'أسماء المشاركين (كل اسم في سطر):';
+            } else {
+                label.innerText = 'أسماء المشاركين (كل اسم في سطر):';
+            }
+        }
+
+        function setStage(matchesCount, namesForStage = null) {
+            // احفظ المرحلة الحالية قبل الانتقال، كي تعود كما كانت عند الرجوع إليها.
+            if (matchesData.length) saveCurrentStage();
+
+            const playersInput = document.getElementById('playersInput');
+            if (namesForStage !== null) {
+                // أسماء الفائزين تُستخدم للمرحلة التالية فقط، ولا تستبدل القائمة الأصلية.
+                fillStageFromNames(matchesCount, namesForStage);
+                stageSnapshots[matchesCount] = cloneMatches(matchesData);
+            } else if (stageSnapshots[matchesCount]) {
+                matchesData = cloneMatches(stageSnapshots[matchesCount]);
+            } else {
+                fillStageFromNames(matchesCount, namesFromOriginalList());
+                stageSnapshots[matchesCount] = cloneMatches(matchesData);
+            }
+
             currentMatchesCount = matchesCount;
+            playersInput.value = originalPlayersText;
             document.querySelectorAll('.stage-tab').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('stage-' + matchesCount);
             if (activeBtn) activeBtn.classList.add('active');
-            document.getElementById('displaySub').innerText = stageTitles[matchesCount];
-            const inputLabel = document.getElementById('playersInputLabel');
-            inputLabel.innerText = matchesCount === 0
-                ? "اسم الفائز بالبطولة:"
-                : `أسماء المشاركين (${matchesCount * 2} خانة فارغة - كل اسم في سطر):`;
-            initEmptyMatches(matchesCount);
-            document.getElementById('playersInput').value = "";
+            document.getElementById('currentStageLabel').textContent = activeBtn ? activeBtn.textContent.trim() : stageTitles[matchesCount];
+            toggleStageMenu(false);
+            document.getElementById('displaySub').innerText = stageTitles[matchesCount]; document.getElementById('displaySub').style.display = (currentMatchesCount === 0) ? 'none' : '';
+            updatePlayersLabel();
             renderMatches();
         }
 
@@ -394,6 +955,8 @@
             const container = document.getElementById('matches-container');
             const colHeader = document.getElementById('columnsHeader');
             container.innerHTML = '';
+            container.classList.toggle('compact', matchesData.length > 16);
+            container.dataset.matchCount = String(matchesData.length);
             if (currentMatchesCount === 0) {
                 colHeader.style.display = 'none';
                 const champName = matchesData[0]?.a || "";
@@ -401,18 +964,34 @@
                 champ.className = 'champion-box';
                 const trophy = document.createElement('div');
                 trophy.className = 'champion-trophy';
-                trophy.textContent = '🏆';
+                trophy.innerHTML = trophySvg(themes[currentTheme].accent);
                 const label = document.createElement('div');
                 label.className = 'champion-label';
-                label.textContent = 'الفائز بالمركز الأول';
+                label.textContent = 'بطل التحدي';
                 const name = document.createElement('div');
                 name.className = 'champion-name';
-                name.textContent = champName;
+                name.innerHTML = champName ? STAR_SVG + '<span></span>' + STAR_SVG : ''; if (champName) name.querySelector('span').textContent = champName;
                 champ.append(trophy, label, name);
                 container.appendChild(champ);
                 return;
             }
             colHeader.style.display = 'flex';
+            if (matchesData.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty-state';
+                const icon = document.createElement('div');
+                icon.className = 'es-icon';
+                icon.textContent = '⏳';
+                const title = document.createElement('div');
+                title.className = 'es-title';
+                title.textContent = 'بانتظار المشاركين';
+                const hint = document.createElement('div');
+                hint.className = 'es-hint';
+                hint.textContent = emptyHintText();
+                empty.append(icon, title, hint);
+                container.appendChild(empty);
+                return;
+            }
             matchesData.forEach((match, index) => {
                 const row = document.createElement('div');
                 row.className = 'match-row';
@@ -438,54 +1017,79 @@
         function selectWinner(matchIndex, side) {
             if (!matchesData[matchIndex][side] || matchesData[matchIndex][side] === BYE_TEXT) return;
             matchesData[matchIndex].winner = matchesData[matchIndex].winner === side ? null : side;
+            saveCurrentStage();
             renderMatches();
         }
 
         function updatePlayersFromText() {
-            const raw = document.getElementById('playersInput').value;
-            const lines = raw.split(/\r?\n/).map(name => name.trim()).filter(name => name !== "");
-            if (currentMatchesCount === 0) {
-                matchesData[0].a = lines[0] || "";
-                renderMatches();
-                return;
+            // تعديل قائمة المشاركين يبدأ البطولة من المرحلة الأولى، لأن نتائج التأهل السابقة
+            // لم تعد صالحة بعد تغيير أسماء المشاركين. الأسماء الفارغة والمكررة لا تدخل القرعة.
+            originalPlayersText = document.getElementById('playersInput').value;
+            const duplicates = getDuplicateNames(originalPlayersText);
+            const warning = document.getElementById('duplicateWarning');
+            if (duplicates.length) {
+                warning.textContent = `الأسماء المكررة لن تُضاف إلى الجدول: ${duplicates.join('، ')}`;
+                warning.classList.add('show');
+            } else {
+                warning.textContent = '';
+                warning.classList.remove('show');
             }
-            for (let i = 0; i < currentMatchesCount; i++) {
-                matchesData[i].a = lines[i * 2] || "";
-                matchesData[i].b = lines[i * 2 + 1] || "";
-                matchesData[i].winner = null;
-            }
+            Object.keys(stageSnapshots).forEach(key => delete stageSnapshots[key]);
+            currentMatchesCount = 32;
+            fillStageFromNames(32, namesFromOriginalList());
+            stageSnapshots[32] = cloneMatches(matchesData);
+            document.querySelectorAll('.stage-tab').forEach(btn => btn.classList.remove('active'));
+            const firstStageBtn = document.getElementById('stage-32');
+            if (firstStageBtn) firstStageBtn.classList.add('active');
+            document.getElementById('currentStageLabel').textContent = 'دوري 32';
+            toggleStageMenu(false);
+            document.getElementById('displaySub').innerText = stageTitles[32]; document.getElementById('displaySub').style.display = (currentMatchesCount === 0) ? 'none' : '';
+            updatePlayersLabel();
             renderMatches();
         }
 
         function shufflePlayers() {
             if (currentMatchesCount === 0) return;
-            const raw = document.getElementById('playersInput').value;
-            let allNames = raw.split(/\r?\n/).map(name => name.trim()).filter(name => name !== "" && name !== BYE_TEXT);
-            if (allNames.length === 0) return;
-            for (let i = allNames.length - 1; i > 0; i--) {
+
+            // القرعة تخص المشاركين الموجودين في المرحلة الحالية فقط؛
+            // بعد التأهل تكون هذه القائمة هي أسماء المتأهلين، لا القائمة الأصلية كاملة.
+            const remainingNames = [];
+            matchesData.forEach(match => {
+                if (match.a && match.a !== BYE_TEXT) remainingNames.push(match.a);
+                if (match.b && match.b !== BYE_TEXT) remainingNames.push(match.b);
+            });
+
+            if (remainingNames.length === 0) {
+                alert('لا توجد أسماء متبقية لإجراء القرعة.');
+                return;
+            }
+
+            for (let i = remainingNames.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [allNames[i], allNames[j]] = [allNames[j], allNames[i]];
+                [remainingNames[i], remainingNames[j]] = [remainingNames[j], remainingNames[i]];
             }
-            document.getElementById('playersInput').value = allNames.join('\n');
-            initEmptyMatches(currentMatchesCount);
-            const isOdd = allNames.length % 2 !== 0;
-            const pairsCount = Math.floor(allNames.length / 2);
-            for (let i = 0; i < currentMatchesCount; i++) {
-                if (i < pairsCount) {
-                    matchesData[i].a = allNames[i * 2];
-                    matchesData[i].b = allNames[i * 2 + 1];
-                } else if (i === pairsCount && isOdd) {
-                    matchesData[i].a = allNames[allNames.length - 1];
-                    matchesData[i].b = BYE_TEXT;
-                    matchesData[i].winner = 'a';
-                }
-            }
+
+            // أعد توزيع الأسماء ضمن المرحلة نفسها، ولا تعد إلى دور الـ32
+            // ولا تغيّر القائمة الأصلية المحفوظة في مربع الأسماء.
+            fillStageFromNames(currentMatchesCount, remainingNames);
+            saveCurrentStage();
+            updatePlayersLabel();
             renderMatches();
         }
 
         function advanceWinners() {
             if (currentMatchesCount === 0) return;
-            let winners = [];
+            const populatedMatches = matchesData.filter(m => m.a || m.b);
+            if (populatedMatches.length === 0) {
+                alert("أدخل أسماء المشاركين أولاً.");
+                return;
+            }
+            const unresolved = populatedMatches.filter(m => !m.winner);
+            if (unresolved.length) {
+                alert(`يرجى تحديد الفائز في جميع المواجهات المكتملة أولاً.\nالمواجهات غير المحسومة: ${unresolved.length}`);
+                return;
+            }
+            const winners = [];
             matchesData.forEach(m => {
                 if (m.winner === 'a' && m.a && m.a !== BYE_TEXT) winners.push(m.a);
                 else if (m.winner === 'b' && m.b && m.b !== BYE_TEXT) winners.push(m.b);
@@ -494,24 +1098,57 @@
                 alert("يرجى تحديد الفائزين أولاً.");
                 return;
             }
+            saveCurrentStage();
             const nextStages = { 32: 16, 16: 8, 8: 4, 4: 2, 2: 1, 1: 0 };
-            const nextCount = nextStages[currentMatchesCount];
-            setStage(nextCount);
-            document.getElementById('playersInput').value = winners.join('\n');
-            updatePlayersFromText();
+            let nextCount = nextStages[currentMatchesCount];
+            // فائز واحد فقط (مباراة واحدة متبقية) = بطل البطولة مباشرة، دون «تأهل تلقائي».
+            if (winners.length === 1) nextCount = 0;
+            setStage(nextCount, winners);
         }
 
         function clearAll() {
-            initEmptyMatches(currentMatchesCount);
-            document.getElementById('playersInput').value = "";
+            originalPlayersText = '';
+            Object.keys(stageSnapshots).forEach(key => delete stageSnapshots[key]);
+            document.getElementById('playersInput').value = '';
+            fillStageFromNames(currentMatchesCount, []);
+            stageSnapshots[currentMatchesCount] = cloneMatches(matchesData);
+            updatePlayersLabel();
             renderMatches();
+        }
+
+        function openPicker(input) {
+            try { if (input.showPicker) input.showPicker(); } catch (e) { /* المتصفح يتولى فتح اللوحة */ }
+        }
+
+        function emptyHintText() {
+            return currentMatchesCount === 32
+                ? 'اكتب أسماء المشاركين في مربع الأسماء لتظهر المواجهات هنا.'
+                : 'اكتب الأسماء في مربع الأسماء، أو أهّل الفائزين من الدور السابق.';
         }
 
         function updateText() {
             document.getElementById('displayGame').innerText = document.getElementById('gameNameInput').value.trim();
             document.getElementById('displayChannel').innerText = document.getElementById('channelNameInput').value;
             document.getElementById('displayTitle').innerText = document.getElementById('eventTitleInput').value;
+            document.getElementById('titleFrame').style.display = (document.getElementById('gameNameInput').value.trim() || document.getElementById('eventTitleInput').value.trim()) ? '' : 'none';
             document.getElementById('displayOwner').innerText = document.getElementById('ownerInput').value;
+            const date = document.getElementById('eventDateInput').value;
+            const time = document.getElementById('eventTimeInput').value;
+            const dateText = document.getElementById('eventDateText');
+            const timeText = document.getElementById('eventTimeText');
+            if (dateText) {
+                const [y, m, d] = date ? date.split('-') : [];
+                dateText.textContent = date ? `${d}/${m}/${y}` : 'dd/mm/yyyy';
+                dateText.classList.toggle('placeholder', !date);
+            }
+            if (timeText) {
+                timeText.textContent = time ? fmtTime(time) : '--:--';
+                timeText.classList.toggle('placeholder', !time);
+            }
+            const dateLabel = fmtDate(date);
+            const timeLabel = fmtTime(time);
+            const dtText = [dateLabel, timeLabel].filter(Boolean).join(' | ');
+            document.getElementById('displayEventDateTime').textContent = dtText ? '\u2066' + dtText + '\u2069' : '';
         }
 
         function roundRect(ctx, x, y, width, height, radius) {
@@ -528,61 +1165,147 @@
             ctx.closePath();
         }
 
-        function downloadImageOffline() {
-            const scale = 2, width = 480, t = themes[currentTheme];
+        function drawClubWatermark(ctx, width, height, theme) {
+            if (!theme.watermark) return;
+            ctx.save();
+            ctx.globalAlpha = 0.10;
+            const cx = width / 2, top = Math.max(110, height * 0.34), w = 205, h = 245;
+            ctx.beginPath();
+            ctx.moveTo(cx, top);
+            ctx.lineTo(cx + w / 2, top + 34);
+            ctx.lineTo(cx + w / 2 - 12, top + 145);
+            ctx.quadraticCurveTo(cx + w / 2 - 22, top + 205, cx, top + h);
+            ctx.quadraticCurveTo(cx - w / 2 + 22, top + 205, cx - w / 2 + 12, top + 145);
+            ctx.lineTo(cx - w / 2, top + 34);
+            ctx.closePath();
+            ctx.fillStyle = theme.watermark === 'madrid' ? '#d7bd70' : '#a51d45';
+            ctx.fill();
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = theme.watermark === 'madrid' ? '#f4d77b' : '#edc65a';
+            ctx.stroke();
+            if (theme.watermark === 'barcelona') {
+                ctx.save(); ctx.clip();
+                for (let x = cx - 90; x <= cx + 90; x += 45) {
+                    ctx.fillStyle = '#58a9e8'; ctx.fillRect(x, top + 30, 22, 220);
+                }
+                ctx.fillStyle = '#edc65a'; ctx.fillRect(cx - 100, top + 105, 200, 9);
+                ctx.restore();
+            } else {
+                ctx.beginPath(); ctx.arc(cx, top + 120, 62, 0, Math.PI * 2);
+                ctx.strokeStyle = '#f4d77b'; ctx.lineWidth = 8; ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx - 45, top + 75); ctx.lineTo(cx + 45, top + 165);
+                ctx.moveTo(cx + 45, top + 75); ctx.lineTo(cx - 45, top + 165); ctx.stroke();
+            }
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 43px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(theme.watermark === 'madrid' ? 'RM' : 'FCB', cx, top + 128);
+            ctx.restore();
+        }
+
+        function drawStar(ctx, cx, cy, r) {
+            ctx.save(); ctx.beginPath();
+            for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r * .45 : r; ctx.lineTo(cx + rad * Math.cos(a), cy + rad * Math.sin(a)); }
+            ctx.closePath();
+            const g = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+            g.addColorStop(0, '#fff3b0'); g.addColorStop(.5, '#f6c343'); g.addColorStop(1, '#b57a12');
+            ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#8a5a0c'; ctx.lineWidth = .8; ctx.stroke(); ctx.restore();
+        }
+
+        async function downloadImageOffline() {
+            const scale = 3, width = 480, t = themes[currentTheme];
             const gameName = document.getElementById('gameNameInput').value.trim();
-            const channelName = document.getElementById('channelNameInput').value.trim() || "قناة وك";
-            const eventTitle = document.getElementById('eventTitleInput').value.trim() || "ساحة التحدي";
+            const channelName = document.getElementById('channelNameInput').value.trim() || "";
+            const eventTitle = document.getElementById('eventTitleInput').value.trim() || "";
             const subTitle = stageTitles[currentMatchesCount];
             const ownerName = document.getElementById('ownerInput').value.trim() || "rowad";
-            const headerHeight = gameName ? 125 : 95;
-            const colsHeaderHeight = currentMatchesCount === 0 ? 0 : 28;
-            const rowHeight = 36, rowGap = 6;
-            const bodyHeight = currentMatchesCount === 0 ? 180 : currentMatchesCount * (rowHeight + rowGap);
-            const footerHeight = 40;
-            const totalHeight = headerHeight + colsHeaderHeight + bodyHeight + footerHeight + 20;
+            const designerText = 'Designed & Developed by rowad';
+            const dateValue = document.getElementById('eventDateInput').value;
+            const timeValue = document.getElementById('eventTimeInput').value;
+            const dateLabel = fmtDate(dateValue);
+            const timeLabel = fmtTime(timeValue);
+            const eventDateTime = [dateLabel, timeLabel].filter(Boolean).join(' | ');
+            const metaParts = [channelName, currentMatchesCount === 0 ? '' : subTitle, eventDateTime].filter(Boolean);
+            const hasG = Boolean(gameName), hasT = Boolean(eventTitle);
+            const frameH = (hasG || hasT) ? 12 + (hasG ? 34 : 0) + (hasG && hasT ? 9 : 0) + (hasT ? 38 : 0) + 12 : 0;
+            const headerHeight = 12 + (frameH ? frameH + 8 : 0) + (metaParts.length ? 22 : 0) + 12;
+            const colsHeaderHeight = currentMatchesCount === 0 ? 0 : 22;
+            const rowHeight = 30, rowGap = 4;
+            // ارتفاع الصورة يتبع عدد المواجهات الظاهرة فعلياً، لا الحد الأعلى للمرحلة.
+            const bodyHeight = currentMatchesCount === 0 ? 268 : (matchesData.length === 0 ? 110 : matchesData.length * (rowHeight + rowGap));
+            const footerHeight = 36;
+            const totalHeight = headerHeight + colsHeaderHeight + bodyHeight + footerHeight;
             const canvas = document.createElement('canvas');
             canvas.width = width * scale;
             canvas.height = totalHeight * scale;
             const ctx = canvas.getContext('2d');
             ctx.scale(scale, scale);
+            const logoImage = new Image();
+            logoImage.crossOrigin = 'anonymous';
+            try {
+                await new Promise(resolve => {
+                    const timeoutId = setTimeout(resolve, 2500);
+                    const finish = () => { clearTimeout(timeoutId); resolve(); };
+                    logoImage.onload = finish;
+                    logoImage.onerror = finish;
+                    logoImage.src = WOLF_LOGO_URL;
+                });
+            } catch (e) { /* استمر بحفظ الصورة حتى لو تعذر تحميل الشعار */ }
+            let trophyImg = null;
+            if (currentMatchesCount === 0) {
+                trophyImg = new Image();
+                await new Promise(resolve => {
+                    trophyImg.onload = resolve; trophyImg.onerror = resolve;
+                    trophyImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(trophySvg(t.accent));
+                });
+            }
             ctx.fillStyle = t.cardBg;
             roundRect(ctx, 0, 0, width, totalHeight, 14);
             ctx.fill();
+            drawClubWatermark(ctx, width, totalHeight, t);
             ctx.strokeStyle = t.border;
             ctx.lineWidth = 2;
             roundRect(ctx, 1, 1, width - 2, totalHeight - 2, 14);
             ctx.stroke();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            let yCursor = 16;
-            if (gameName) {
-                ctx.font = 'bold 15px sans-serif';
-                const badgeW = Math.max(95, ctx.measureText(gameName).width + 36);
-                const badgeX = (width - badgeW) / 2;
-                ctx.fillStyle = t.badgeBg;
-                roundRect(ctx, badgeX, yCursor, badgeW, 28, 14);
-                ctx.fill();
-                ctx.strokeStyle = t.accent;
-                ctx.lineWidth = 1;
-                roundRect(ctx, badgeX, yCursor, badgeW, 28, 14);
-                ctx.stroke();
-                ctx.fillStyle = t.accent;
-                ctx.fillText(gameName, width / 2, yCursor + 14);
-                yCursor += 38;
+            let yCursor = 12;
+            if (frameH) {
+                const fx = 16, fw = width - 32;
+                ctx.fillStyle = t.badgeBg; roundRect(ctx, fx, yCursor, fw, frameH, 14); ctx.fill();
+                ctx.strokeStyle = t.accent; ctx.lineWidth = 2; roundRect(ctx, fx, yCursor, fw, frameH, 14); ctx.stroke();
+                ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const fit = (txt, size, maxW) => { let sz = size; ctx.font = `bold ${sz}px sans-serif`; while (sz > 14 && ctx.measureText(txt).width > maxW) { sz--; ctx.font = `bold ${sz}px sans-serif`; } };
+                let fy = yCursor + 12;
+                if (hasG) {
+                    fit(gameName, 24, fw - 32); ctx.fillStyle = t.accent; ctx.fillText(gameName, width / 2, fy + 17); fy += 34;
+                    if (hasT) {
+                        ctx.save(); ctx.globalAlpha = .6; ctx.strokeStyle = t.accent; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(fx + 26, fy + 4.5); ctx.lineTo(fx + fw - 26, fy + 4.5); ctx.stroke(); ctx.restore();
+                        fy += 9;
+                    }
+                }
+                if (hasT) { fit(eventTitle, 28, fw - 32); ctx.fillStyle = '#ffffff'; ctx.fillText(eventTitle, width / 2, fy + 19); }
+                ctx.direction = 'inherit';
+                yCursor += frameH + 8;
             }
-            ctx.font = 'bold 13px sans-serif';
-            ctx.fillStyle = t.accent;
-            ctx.fillText(channelName, width / 2, yCursor + 8);
-            yCursor += 24;
-            ctx.font = 'bold 21px sans-serif';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(eventTitle, width / 2, yCursor + 12);
-            yCursor += 26;
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillStyle = t.sub;
-            ctx.fillText(subTitle, width / 2, yCursor + 8);
-            yCursor += 20;
+            if (metaParts.length) {
+                ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = t.sub;
+                let fs = 12, segs, total; const gap = 22;
+                const layout = () => {
+                    ctx.font = `bold ${fs}px sans-serif`;
+                    segs = metaParts.map((txt, i) => { const dir = (eventDateTime && i === metaParts.length - 1) ? 'ltr' : 'rtl'; ctx.direction = dir; return { txt, dir, w: ctx.measureText(txt).width }; });
+                    total = segs.reduce((a, g) => a + g.w, 0) + gap * (segs.length - 1);
+                };
+                layout(); while (total > width - 32 && fs > 9) { fs--; layout(); }
+                let x = (width + total) / 2;
+                segs.forEach((g, i) => {
+                    x -= g.w; ctx.direction = g.dir; ctx.fillText(g.txt, x, yCursor + 8); x -= gap;
+                    if (i < segs.length - 1) { ctx.direction = 'ltr'; ctx.textAlign = 'center'; ctx.fillText('•', x + gap / 2, yCursor + 8); ctx.textAlign = 'left'; }
+                });
+                ctx.direction = 'inherit'; ctx.textAlign = 'center';
+                yCursor += 22;
+            }
             ctx.strokeStyle = t.border;
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -591,7 +1314,7 @@
             ctx.stroke();
             yCursor += 12;
             if (currentMatchesCount === 0) {
-                const boxX = 16, boxW = width - 32, boxH = 155;
+                const boxX = 16, boxW = width - 32, boxH = 262;
                 ctx.fillStyle = t.badgeBg;
                 roundRect(ctx, boxX, yCursor, boxW, boxH, 12);
                 ctx.fill();
@@ -599,22 +1322,26 @@
                 ctx.lineWidth = 2;
                 roundRect(ctx, boxX, yCursor, boxW, boxH, 12);
                 ctx.stroke();
-                ctx.font = '38px sans-serif';
-                ctx.fillText('🏆', width / 2, yCursor + 38);
-                ctx.font = 'bold 15px sans-serif';
-                ctx.fillStyle = t.sub;
-                ctx.fillText('الفائز بالمركز الأول', width / 2, yCursor + 80);
-                ctx.font = 'bold 28px sans-serif';
-                ctx.fillStyle = t.accent;
-                ctx.fillText(matchesData[0]?.a || "", width / 2, yCursor + 120);
+                if (trophyImg && trophyImg.naturalWidth) ctx.drawImage(trophyImg, width / 2 - 68, yCursor + 6, 136, 162);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.font = 'bold 18px sans-serif'; ctx.fillStyle = t.sub;
+                ctx.fillText('بطل التحدي', width / 2, yCursor + 186);
+                const champName = matchesData[0]?.a || '';
+                ctx.font = 'bold 28px sans-serif'; ctx.fillStyle = t.accent;
+                ctx.fillText(champName, width / 2, yCursor + 226, width - 140);
+                if (champName) {
+                    const nw = Math.min(ctx.measureText(champName).width, width - 140);
+                    [-1, 1].forEach(sd => drawStar(ctx, width / 2 + sd * (nw / 2 + 22), yCursor + 226, 9));
+                }
             } else {
                 ctx.font = 'bold 14px sans-serif';
                 ctx.fillStyle = t.sub;
-                ctx.fillText('A', width - 125, yCursor + 8);
-                ctx.fillText('B', 110, yCursor + 8);
-                yCursor += 22;
-                const padX = 12, rowW = width - padX * 2, idxW = 32, vsW = 38;
+                ctx.font = 'bold 13px sans-serif';
+                const padX = 44, rowW = width - padX * 2, idxW = 32, vsW = 38;
                 const sideW = (rowW - idxW - vsW) / 2;
+                ctx.fillText('صاحب الجلسة', padX + rowW - idxW - sideW / 2, yCursor + 8);
+                ctx.fillText('الخصم', padX + sideW / 2, yCursor + 8);
+                yCursor += 22;
                 matchesData.forEach((match, index) => {
                     const rowX = padX, rowY = yCursor;
                     ctx.fillStyle = t.rowBg;
@@ -628,11 +1355,11 @@
                     ctx.fillText((index + 1).toString().padStart(2, '0'), idxX + idxW / 2, rowY + rowHeight / 2);
                     const sideAX = idxX - sideW;
                     if (match.winner === 'a') {
-                        ctx.fillStyle = 'rgba(6, 214, 160, 0.28)';
+                        ctx.fillStyle = t.winnerBg || 'rgba(6, 214, 160, 0.28)';
                         ctx.fillRect(sideAX, rowY + 1, sideW, rowHeight - 2);
                     }
                     ctx.font = 'bold 14px sans-serif';
-                    ctx.fillStyle = match.winner === 'a' ? '#06d6a0' : '#edf2f7';
+                    ctx.fillStyle = match.winner === 'a' ? (t.winnerColor || '#06d6a0') : '#edf2f7';
                     ctx.fillText(match.a, sideAX + sideW / 2, rowY + rowHeight / 2, sideW - 10);
                     const vsX = sideAX - vsW;
                     ctx.fillStyle = t.vsBg;
@@ -648,11 +1375,11 @@
                         ctx.fillStyle = t.accent;
                     } else {
                         if (match.winner === 'b') {
-                            ctx.fillStyle = 'rgba(6, 214, 160, 0.28)';
+                            ctx.fillStyle = t.winnerBg || 'rgba(6, 214, 160, 0.28)';
                             ctx.fillRect(sideBX + 1, rowY + 1, sideW - 1, rowHeight - 2);
                         }
                         ctx.font = 'bold 14px sans-serif';
-                        ctx.fillStyle = match.winner === 'b' ? '#06d6a0' : '#edf2f7';
+                        ctx.fillStyle = match.winner === 'b' ? (t.winnerColor || '#06d6a0') : '#edf2f7';
                     }
                     ctx.fillText(match.b, sideBX + sideW / 2, rowY + rowHeight / 2, sideW - 10);
                     ctx.strokeStyle = t.rowBorder;
@@ -661,15 +1388,118 @@
                     ctx.stroke();
                     yCursor += rowHeight + rowGap;
                 });
+                if (matchesData.length === 0) {
+                    const bx = 16, bw = width - 32, bh = 92;
+                    ctx.fillStyle = t.badgeBg;
+                    roundRect(ctx, bx, yCursor, bw, bh, 12);
+                    ctx.fill();
+                    ctx.save();
+                    ctx.setLineDash([7, 5]);
+                    ctx.strokeStyle = t.accent;
+                    ctx.lineWidth = 2;
+                    roundRect(ctx, bx, yCursor, bw, bh, 12);
+                    ctx.stroke();
+                    ctx.restore();
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 18px sans-serif';
+                    ctx.fillStyle = t.accent;
+                    ctx.fillText('⏳ بانتظار المشاركين', width / 2, yCursor + 32);
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillStyle = t.sub;
+                    ctx.fillText(emptyHintText(), width / 2, yCursor + 62, bw - 20);
+                }
             }
+            // شعار WOLF على جانبي جدول المواجهات داخل الصورة المحفوظة.
+            if (currentMatchesCount !== 0 && matchesData.length > 0 && logoImage.complete && logoImage.naturalWidth) {
+                const logoSize = 25;
+                const logoY = Math.max(140, (headerHeight + colsHeaderHeight + bodyHeight / 2) - logoSize / 2);
+                [12, width - 12 - logoSize].forEach(x => {
+                    ctx.save();
+                    ctx.beginPath(); roundRect(ctx, x, logoY, logoSize, logoSize, 6); ctx.clip();
+                    ctx.drawImage(logoImage, x, logoY, logoSize, logoSize);
+                    ctx.restore();
+                });
+            }
+            // تذييل الصورة: اسم صاحب الفعالية والعبارة الأصلية دون تغيير.
+            const footerY = totalHeight - 18;
+            ctx.strokeStyle = t.border; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(16, footerY - 12); ctx.lineTo(width - 16, footerY - 12); ctx.stroke();
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'right'; ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = '#a0aec0';
+            ctx.fillText(`صاحب الفعالية: ${ownerName}`, width - 18, footerY + 3, width * .45);
+            ctx.textAlign = 'left'; ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(designerText, 18, footerY + 3, width * .48);
+
             const link = document.createElement('a');
-            link.download = `wok-challenge-${currentMatchesCount}.png`;
+            link.download = `wolf-challenge-${currentMatchesCount}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         }
 
-        initEmptyMatches(32);
+
+        async function installApp() {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                document.getElementById('installAppButton').hidden = true;
+            } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+                alert('لتثبيت البرنامج على iPhone: اضغط زر المشاركة في Safari ثم اختر «إضافة إلى الشاشة الرئيسية».');
+            } else {
+                alert('لتثبيت البرنامج: افتح قائمة المتصفح ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». يجب فتح الموقع عبر HTTPS.');
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            document.getElementById('installAppButton').hidden = false;
+        });
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('installAppButton').hidden = true;
+            deferredInstallPrompt = null;
+        });
+        if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+        }
+
+        document.addEventListener('click', function(event) {
+            const picker = document.getElementById('themePicker');
+            const stagePicker = document.getElementById('stagePicker');
+            if (picker && !picker.contains(event.target)) toggleThemeMenu(false);
+            if (stagePicker && !stagePicker.contains(event.target)) toggleStageMenu(false);
+        });
+
+        fillStageFromNames(32, []);
+        originalPlayersText = document.getElementById('playersInput').value || '';
+        stageSnapshots[32] = cloneMatches(matchesData);
+        updatePlayersLabel();
+        updateText();
         setTheme('blue');
+        const STORE_KEY = 'wolf-tournaments-v1';
+        function saveState() {
+            try {
+                if (matchesData.length) stageSnapshots[currentMatchesCount] = cloneMatches(matchesData);
+                localStorage.setItem(STORE_KEY, JSON.stringify({ names: originalPlayersText, stage: currentMatchesCount, theme: currentTheme, snaps: stageSnapshots }));
+            } catch (e) { /* التخزين غير متاح */ }
+        }
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORE_KEY); if (!raw) return;
+                const d = JSON.parse(raw);
+                originalPlayersText = d.names || '';
+                document.getElementById('playersInput').value = originalPlayersText;
+                Object.keys(stageSnapshots).forEach(k => delete stageSnapshots[k]);
+                Object.assign(stageSnapshots, d.snaps || {});
+                updateText();
+                setTheme(themes[d.theme] ? d.theme : 'blue');
+                setStage(Number.isInteger(d.stage) ? d.stage : 32);
+                updatePlayersLabel();
+            } catch (e) { /* ابدأ من الصفر إذا تعذرت الاستعادة */ }
+        }
+        ['input', 'change', 'click'].forEach(ev => document.addEventListener(ev, () => setTimeout(saveState, 60), true));
+        document.querySelectorAll('img[data-wolf]').forEach(img => { img.src = WOLF_LOGO_URL; });
+        loadState();
     </script>
 </body>
 </html>

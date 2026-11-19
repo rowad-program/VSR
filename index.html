@@ -76,66 +76,57 @@
             font-size: 16px;
             line-height: 1.7;
         }
-        .welcome-role {
+        .welcome-screen { transition: opacity .55s ease; cursor: pointer; }
+        .welcome-screen.fade { opacity: 0; pointer-events: none; }
+        .welcome-card { margin: 0; }
+        .welcome-title { margin-bottom: 0; }
+        .user-bar {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 0 8px 0;
+            padding: 0 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            text-align: center;
+        }
+        .user-id { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .user-badge {
             display: inline-block;
-            padding: 9px 30px;
-            margin-bottom: 24px;
-            border-radius: 40px;
+            padding: 4px 16px;
+            border-radius: 30px;
             background: #b51f62;
             color: #fff;
-            font-size: 25px;
+            font-size: 13px;
             font-weight: 800;
-            box-shadow: 0 5px 18px rgba(181,31,98,.3);
+            line-height: 1.4;
         }
-        .welcome-name {
-            margin: 0 0 14px;
-            color: #fff;
-            font-size: clamp(28px, 7vw, 38px);
-            font-weight: 700;
-            letter-spacing: .5px;
-        }
-        .welcome-member {
+        .user-name { padding: 0 4px; color: #fff; font-size: 17px; font-weight: 500; direction: ltr; unicode-bidi: isolate; }
+        .user-member {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin: 0 0 26px;
-            padding: 6px 8px 6px 14px;
+            padding: 3px 6px 3px 12px;
             border-radius: 30px;
             background: rgba(255,255,255,.08);
             border: 1px solid rgba(255,255,255,.16);
             color: #d8e5f5;
-            font-size: 14px;
+            font-size: 12px;
         }
-        .welcome-member .member-num {
-            direction: ltr;
-            unicode-bidi: isolate;
-            letter-spacing: 1px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .welcome-member .member-copy {
-            padding: 5px 12px;
+        .user-member .member-num { direction: ltr; unicode-bidi: isolate; letter-spacing: 1px; font-weight: 700; color: #fff; }
+        .user-member .member-copy {
+            padding: 4px 11px;
             border: 0;
             border-radius: 20px;
             background: rgba(76,201,240,.2);
             color: #4cc9f0;
             font: inherit;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
         }
-        .welcome-member .member-copy.done { background: #2fbf71; color: #fff; }
-        .welcome-enter {
-            padding: 12px 34px;
-            border: 0;
-            border-radius: 30px;
-            background: #4cc9f0;
-            color: #0d1b2a;
-            font: inherit;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-        }
+        .user-member .member-copy.done { background: #2fbf71; color: #fff; }
         .hidden { display: none !important; }
         .controls {
             background: #1b263b;
@@ -610,17 +601,32 @@
                  data-wolf
                  alt="شعار تطبيق WOLF Qanawat">
             <h1 class="welcome-title">أهلاً بكم في برنامج تنظيم بطولات ألعاب ولف اللوحية</h1>
-            <div class="welcome-role">مساعد</div>
-            <h2 class="welcome-name">Rowad</h2>
-            <div class="welcome-member">
-                <span>العضوية: <span class="member-num" id="memberNum">74417756</span></span>
-                <button type="button" class="member-copy" id="memberCopyBtn" onclick="copyMemberId()">نسخ</button>
-            </div>
-            <button class="welcome-enter" onclick="enterSite()">دخول</button>
         </div>
     </section>
+    <script>
+    (function () {
+        var s = document.getElementById('welcome-screen'), K = 'wolfWelcomeAt', show = true;
+        try { var t = +localStorage.getItem(K); if (t && Date.now() - t < 30 * 60 * 1000) show = false; } catch (e) {}
+        if (!show) { s.classList.add('hidden'); return; }
+        try { localStorage.setItem(K, String(Date.now())); } catch (e) {}
+        var closed = false;
+        function close() { if (closed) return; closed = true; s.classList.add('fade'); setTimeout(function () { s.classList.add('hidden'); }, 600); }
+        s.addEventListener('click', close);
+        setTimeout(close, 2500);
+    })();
+    </script>
 
-    <div id="main-site" class="hidden">
+    <div id="main-site">
+    <div class="user-bar">
+        <div class="user-id">
+            <span class="user-badge">مساعد</span>
+            <span class="user-name">Rowad</span>
+        </div>
+        <div class="user-member">
+            <span>العضوية: <span class="member-num" id="memberNum">74417756</span></span>
+            <button type="button" class="member-copy" id="memberCopyBtn" onclick="copyMemberId()">نسخ</button>
+        </div>
+    </div>
     <div class="controls">
         <h3><img data-wolf class="panel-logo" alt=""><span>إدارة البطولة والمواجهات</span><img data-wolf class="panel-logo" alt=""></h3>
 
@@ -917,11 +923,6 @@
             } else {
                 fallback();
             }
-        }
-
-        function enterSite() {
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('main-site').classList.remove('hidden');
         }
 
         function initEmptyMatches(count) {

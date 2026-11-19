@@ -88,12 +88,43 @@
             box-shadow: 0 5px 18px rgba(181,31,98,.3);
         }
         .welcome-name {
-            margin: 0 0 30px;
+            margin: 0 0 14px;
             color: #fff;
-            font-size: clamp(38px, 10vw, 58px);
+            font-size: clamp(28px, 7vw, 38px);
             font-weight: 700;
             letter-spacing: .5px;
         }
+        .welcome-member {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 26px;
+            padding: 6px 8px 6px 14px;
+            border-radius: 30px;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.16);
+            color: #d8e5f5;
+            font-size: 14px;
+        }
+        .welcome-member .member-num {
+            direction: ltr;
+            unicode-bidi: isolate;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .welcome-member .member-copy {
+            padding: 5px 12px;
+            border: 0;
+            border-radius: 20px;
+            background: rgba(76,201,240,.2);
+            color: #4cc9f0;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .welcome-member .member-copy.done { background: #2fbf71; color: #fff; }
         .welcome-enter {
             padding: 12px 34px;
             border: 0;
@@ -581,6 +612,10 @@
             <h1 class="welcome-title">أهلاً بكم في برنامج تنظيم بطولات ألعاب ولف اللوحية</h1>
             <div class="welcome-role">مساعد</div>
             <h2 class="welcome-name">Rowad</h2>
+            <div class="welcome-member">
+                <span>العضوية: <span class="member-num" id="memberNum">74417756</span></span>
+                <button type="button" class="member-copy" id="memberCopyBtn" onclick="copyMemberId()">نسخ</button>
+            </div>
             <button class="welcome-enter" onclick="enterSite()">دخول</button>
         </div>
     </section>
@@ -855,6 +890,33 @@
             root.style.setProperty('--watermark-image', watermarkSvg ? `url("data:image/svg+xml,${encodeURIComponent(watermarkSvg)}")` : 'none');
             root.style.setProperty('--watermark-opacity', t.watermark ? '0.18' : '0');
             renderMatches();
+        }
+
+        function copyMemberId() {
+            const num = document.getElementById('memberNum').textContent.trim();
+            const btn = document.getElementById('memberCopyBtn');
+            const done = () => {
+                btn.textContent = 'تم النسخ ✓';
+                btn.classList.add('done');
+                setTimeout(() => { btn.textContent = 'نسخ'; btn.classList.remove('done'); }, 1800);
+            };
+            const fallback = () => {
+                const t = document.createElement('textarea');
+                t.value = num;
+                t.setAttribute('readonly', '');
+                t.style.position = 'fixed';
+                t.style.opacity = '0';
+                document.body.appendChild(t);
+                t.select();
+                t.setSelectionRange(0, num.length);
+                try { document.execCommand('copy'); done(); } catch (e) {}
+                document.body.removeChild(t);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(num).then(done).catch(fallback);
+            } else {
+                fallback();
+            }
         }
 
         function enterSite() {

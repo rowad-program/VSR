@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="تنظيم البطولات">
-    <link rel="apple-touch-icon" href="icons/icon-180.png">
-    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="manifest" href="manifest.webmanifest">
     <title>تنظيم البطولات</title>
     <style>
@@ -591,6 +591,25 @@
         .header-meta > * { margin: 0; padding: 0; background: none; border: 0; font-size: 12px; font-weight: 700; color: inherit; }
         .header-meta > :not(:empty):not([style*="none"]) ~ :not(:empty):not([style*="none"])::before { content: "•"; margin: 0 8px; opacity: .8; }
             .header-meta > .event-date-time { direction: rtl; unicode-bidi: isolate; }
+
+        /* نظام البطولة: قائمة الأنظمة ومنصة الكؤوس */
+        #modeOptions { grid-template-columns: 1fr; }
+        .section-title { text-align: center; color: var(--accent-color, #ffd166); font-weight: 800; font-size: 13px; margin: 10px 0 6px; }
+        .section-title:first-child { margin-top: 0; }
+        .rank-hint { text-align: center; color: var(--sub-color, #4cc9f0); font-size: 12px; font-weight: 700; margin: 0 0 8px; line-height: 1.7; }
+        .rank-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin-bottom: 6px; background: var(--row-bg, rgba(27, 38, 59, 0.8)); border: 1px solid var(--row-border, #2b4162); border-radius: 8px; }
+        .rank-name { flex: 1; min-width: 0; font-size: 14px; font-weight: bold; color: #edf2f7; overflow-wrap: anywhere; }
+        .rank-row.r1 .rank-name { color: var(--winner-color, #06d6a0); }
+        .rank-btns { display: flex; gap: 6px; }
+        .rank-btn { width: 40px; height: 36px; padding: 0; font-size: 19px; line-height: 1; border-radius: 8px; border: 1px solid var(--row-border, #2b4162); background: var(--vs-bg, #1d3557); cursor: pointer; opacity: .5; }
+        .rank-btn.active { opacity: 1; border-color: var(--accent-color, #ffd166); box-shadow: inset 0 0 0 1px var(--accent-color, #ffd166); background: var(--badge-bg, rgba(255,209,102,.15)); }
+        .stage-tab[hidden] { display: none; }
+        .podium-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--accent-color, #ffd166); }
+        .podium-item { flex: 1; min-width: 130px; max-width: 210px; text-align: center; }
+        .podium-trophy { display: flex; align-items: center; justify-content: center; }
+        .podium-trophy svg { width: 96px; height: auto; display: block; filter: drop-shadow(0 5px 10px rgba(0,0,0,.45)); }
+        .podium-label { color: var(--sub-color, #4cc9f0); font-size: 15px; font-weight: bold; margin: 4px 0; }
+        .podium-name { color: #fff; font-size: 21px; font-weight: bold; overflow-wrap: anywhere; }
     </style>
 </head>
 <body>
@@ -648,6 +667,23 @@
                 <button type="button" id="theme-madrid" class="theme-tab" onclick="setTheme('madrid')">🤍 ريال مدريد</button>
                 <button type="button" id="theme-barcelona" class="theme-tab" onclick="setTheme('barcelona')">🔵🔴 برشلونة</button>
                 <button type="button" id="theme-pink" class="theme-tab" onclick="setTheme('pink')">🌸 زهري</button>
+            </div>
+        </div>
+
+        <label>نظام البطولة:</label>
+        <div class="theme-picker" id="modePicker">
+            <button type="button" class="theme-picker-trigger" id="modePickerTrigger"
+                    onclick="toggleModeMenu()" aria-expanded="false" aria-controls="modeOptions">
+                <span class="theme-picker-current">
+                    <span>🎖️</span>
+                    <span id="currentModeLabel">🥇 فائز واحد</span>
+                </span>
+                <span class="theme-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="theme-tabs" id="modeOptions">
+                <button type="button" id="mode-1" class="theme-tab mode-tab active" onclick="setMode(1)">🥇 فائز واحد</button>
+                <button type="button" id="mode-2" class="theme-tab mode-tab" onclick="setMode(2)">🥈 فائزان (بطل ووصيف)</button>
+                <button type="button" id="mode-3" class="theme-tab mode-tab" onclick="setMode(3)">🥉 ثلاثة فائزين</button>
             </div>
         </div>
 
@@ -769,12 +805,24 @@
         const UNDO_LIMIT = 10;
         let currentTheme = 'blue';
         const BYE_TEXT = "تأهل تلقائي ⭐";
+        const THIRD = -1;                 // مرحلة مباراة المركز الثالث (نظام الثلاثة فائزين)
+        let tournamentMode = 1;
+        let threeRanks = {};              // مراكز اللاعبين الثلاثة الباقين: { مفتاح المرحلة: { الاسم: 1|2|3 } }           // 1 = فائز واحد، 2 = بطل ووصيف، 3 = ثلاثة فائزين
+        const NEXT_STAGE = { 32: 16, 16: 8, 8: 4, 4: 2, 2: 1, 1: 0 };
+        const MODE_LABELS = { 1: '🥇 فائز واحد', 2: '🥈 فائزان (بطل ووصيف)', 3: '🥉 ثلاثة فائزين' };
         const WOLF_LOGO_URL = "data:image/png;base64,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";
         let deferredInstallPrompt = null;
 
         // كأس ذهبي فخم بشعار WOLF؛ يُستخدم في الصفحة وفي الصورة المحفوظة، والتوهج بلون الثيم.
-        function trophySvg(glow) {
-            return `<svg viewBox="0 0 160 190" width="160" height="190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="كأس البطولة"><defs><radialGradient id="tGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${glow}" stop-opacity=".6"/><stop offset=".6" stop-color="${glow}" stop-opacity=".18"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient><linearGradient id="tGold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a5a0c"/><stop offset=".2" stop-color="#f7d774"/><stop offset=".38" stop-color="#fff6c8"/><stop offset=".55" stop-color="#e3b02d"/><stop offset=".78" stop-color="#b57a12"/><stop offset="1" stop-color="#f1cb5a"/></linearGradient><linearGradient id="tGoldV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a8"/><stop offset=".5" stop-color="#e8b730"/><stop offset="1" stop-color="#9a6410"/></linearGradient><clipPath id="tLogoClip"><circle cx="80" cy="76" r="21"/></clipPath></defs><circle cx="80" cy="92" r="80" fill="url(#tGlow)"/><ellipse cx="87.3" cy="6.9" rx="6.5" ry="2.6" transform="rotate(14 87.3 6.9)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="94.1" cy="9.5" rx="6.5" ry="2.6" transform="rotate(28 94.1 9.5)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="100.1" cy="13.7" rx="6.5" ry="2.6" transform="rotate(42 100.1 13.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="104.9" cy="19.2" rx="6.5" ry="2.6" transform="rotate(56 104.9 19.2)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="108.2" cy="25.7" rx="6.5" ry="2.6" transform="rotate(70 108.2 25.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="72.7" cy="6.9" rx="6.5" ry="2.6" transform="rotate(-14 72.7 6.9)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="65.9" cy="9.5" rx="6.5" ry="2.6" transform="rotate(-28 65.9 9.5)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="59.9" cy="13.7" rx="6.5" ry="2.6" transform="rotate(-42 59.9 13.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="55.1" cy="19.2" rx="6.5" ry="2.6" transform="rotate(-56 55.1 19.2)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><ellipse cx="51.8" cy="25.7" rx="6.5" ry="2.6" transform="rotate(-70 51.8 25.7)" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".4"/><polygon points="80.00,15.00 81.82,19.49 86.66,19.84 82.95,22.96 84.11,27.66 80.00,25.10 75.89,27.66 77.05,22.96 73.34,19.84 78.18,19.49" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width=".6"/><path d="M42 40 H26 Q14 40 14 53 Q14 84 46 94" fill="none" stroke="url(#tGold)" stroke-width="7" stroke-linecap="round"/><path d="M42 40 H26 Q14 40 14 53 Q14 84 46 94" fill="none" stroke="#fff6c8" stroke-width="1.6" opacity=".6" stroke-linecap="round"/><path d="M118 40 H134 Q146 40 146 53 Q146 84 114 94" fill="none" stroke="url(#tGold)" stroke-width="7" stroke-linecap="round"/><path d="M118 40 H134 Q146 40 146 53 Q146 84 114 94" fill="none" stroke="#fff6c8" stroke-width="1.6" opacity=".6" stroke-linecap="round"/><path d="M38 30 H122 V68 Q122 122 80 134 Q38 122 38 68 Z" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><rect x="34" y="26" width="92" height="9" rx="4.5" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width="1.5"/><path d="M46 40 Q47 98 74 124 Q54 98 53 40 Z" fill="#fff" opacity=".35"/><ellipse cx="108" cy="52" rx="2" ry="9" fill="#fff" opacity=".25"/><circle cx="80" cy="76" r="27.5" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width="1"/><circle cx="80" cy="76" r="23.5" fill="#080808"/><image href="${WOLF_LOGO_URL}" x="58" y="54" width="44" height="44" preserveAspectRatio="xMidYMid slice" clip-path="url(#tLogoClip)"/><circle cx="80" cy="76" r="23.5" fill="none" stroke="#fff3b0" stroke-width="1.5"/><path d="M69 132 H91 L88 152 H72 Z" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><ellipse cx="80" cy="140" rx="14" ry="4.5" fill="url(#tGoldV)" stroke="#8a5a0c" stroke-width="1.2"/><rect x="52" y="150" width="56" height="12" rx="4" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><rect x="38" y="161" width="84" height="19" rx="5" fill="url(#tGold)" stroke="#8a5a0c" stroke-width="1.5"/><rect x="62" y="166" width="36" height="9" rx="2" fill="#fff0b0" stroke="#8a5a0c" stroke-width="1"/><path d="M67 170.5 H93" stroke="#b57a12" stroke-width="1.2"/></svg>`;
+        const TROPHY_PALETTES = {
+            gold:   { g: ['#8a5a0c', '#f7d774', '#fff6c8', '#e3b02d', '#b57a12', '#f1cb5a'], v: ['#fff0a8', '#e8b730', '#9a6410'], stroke: '#8a5a0c', hi: '#fff6c8', plate: '#fff0b0', band: '#b57a12', ring: '#fff3b0' },
+            silver: { g: ['#59626e', '#e4e9ef', '#ffffff', '#b6bfcb', '#7b8592', '#dfe5ec'], v: ['#f6f8fb', '#b8c1cc', '#69727e'], stroke: '#4e5764', hi: '#ffffff', plate: '#eef2f6', band: '#7b8592', ring: '#f3f6f9' },
+            bronze: { g: ['#5a2e0f', '#e3a971', '#f8d8b6', '#c47c40', '#8a4a1c', '#dc9a5f'], v: ['#f4cfa3', '#c47c40', '#7a3f17'], stroke: '#5a2e0f', hi: '#f8d8b6', plate: '#f2d6ba', band: '#8a4a1c', ring: '#f6dcc4' }
+        };
+        const METAL_GLOW = { gold: null, silver: '#c9d2dd', bronze: '#d9965a' };
+        function trophySvg(glow, metal = 'gold') {
+            const P = TROPHY_PALETTES[metal] || TROPHY_PALETTES.gold;
+            return `<svg viewBox="0 0 160 190" width="160" height="190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="كأس البطولة"><defs><radialGradient id="tGlow-${metal}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${glow}" stop-opacity=".6"/><stop offset=".6" stop-color="${glow}" stop-opacity=".18"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient><linearGradient id="tGold-${metal}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${P.g[0]}"/><stop offset=".2" stop-color="${P.g[1]}"/><stop offset=".38" stop-color="${P.g[2]}"/><stop offset=".55" stop-color="${P.g[3]}"/><stop offset=".78" stop-color="${P.g[4]}"/><stop offset="1" stop-color="${P.g[5]}"/></linearGradient><linearGradient id="tGoldV-${metal}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.v[0]}"/><stop offset=".5" stop-color="${P.v[1]}"/><stop offset="1" stop-color="${P.v[2]}"/></linearGradient><clipPath id="tLogoClip-${metal}"><circle cx="80" cy="76" r="21"/></clipPath></defs><circle cx="80" cy="92" r="80" fill="url(#tGlow-${metal})"/><ellipse cx="87.3" cy="6.9" rx="6.5" ry="2.6" transform="rotate(14 87.3 6.9)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="94.1" cy="9.5" rx="6.5" ry="2.6" transform="rotate(28 94.1 9.5)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="100.1" cy="13.7" rx="6.5" ry="2.6" transform="rotate(42 100.1 13.7)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="104.9" cy="19.2" rx="6.5" ry="2.6" transform="rotate(56 104.9 19.2)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="108.2" cy="25.7" rx="6.5" ry="2.6" transform="rotate(70 108.2 25.7)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="72.7" cy="6.9" rx="6.5" ry="2.6" transform="rotate(-14 72.7 6.9)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="65.9" cy="9.5" rx="6.5" ry="2.6" transform="rotate(-28 65.9 9.5)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="59.9" cy="13.7" rx="6.5" ry="2.6" transform="rotate(-42 59.9 13.7)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="55.1" cy="19.2" rx="6.5" ry="2.6" transform="rotate(-56 55.1 19.2)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><ellipse cx="51.8" cy="25.7" rx="6.5" ry="2.6" transform="rotate(-70 51.8 25.7)" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".4"/><polygon points="80.00,15.00 81.82,19.49 86.66,19.84 82.95,22.96 84.11,27.66 80.00,25.10 75.89,27.66 77.05,22.96 73.34,19.84 78.18,19.49" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width=".6"/><path d="M42 40 H26 Q14 40 14 53 Q14 84 46 94" fill="none" stroke="url(#tGold-${metal})" stroke-width="7" stroke-linecap="round"/><path d="M42 40 H26 Q14 40 14 53 Q14 84 46 94" fill="none" stroke="${P.hi}" stroke-width="1.6" opacity=".6" stroke-linecap="round"/><path d="M118 40 H134 Q146 40 146 53 Q146 84 114 94" fill="none" stroke="url(#tGold-${metal})" stroke-width="7" stroke-linecap="round"/><path d="M118 40 H134 Q146 40 146 53 Q146 84 114 94" fill="none" stroke="${P.hi}" stroke-width="1.6" opacity=".6" stroke-linecap="round"/><path d="M38 30 H122 V68 Q122 122 80 134 Q38 122 38 68 Z" fill="url(#tGold-${metal})" stroke="${P.stroke}" stroke-width="1.5"/><rect x="34" y="26" width="92" height="9" rx="4.5" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width="1.5"/><path d="M46 40 Q47 98 74 124 Q54 98 53 40 Z" fill="#fff" opacity=".35"/><ellipse cx="108" cy="52" rx="2" ry="9" fill="#fff" opacity=".25"/><circle cx="80" cy="76" r="27.5" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width="1"/><circle cx="80" cy="76" r="23.5" fill="#080808"/><image href="${WOLF_LOGO_URL}" x="58" y="54" width="44" height="44" preserveAspectRatio="xMidYMid slice" clip-path="url(#tLogoClip-${metal})"/><circle cx="80" cy="76" r="23.5" fill="none" stroke="${P.ring}" stroke-width="1.5"/><path d="M69 132 H91 L88 152 H72 Z" fill="url(#tGold-${metal})" stroke="${P.stroke}" stroke-width="1.5"/><ellipse cx="80" cy="140" rx="14" ry="4.5" fill="url(#tGoldV-${metal})" stroke="${P.stroke}" stroke-width="1.2"/><rect x="52" y="150" width="56" height="12" rx="4" fill="url(#tGold-${metal})" stroke="${P.stroke}" stroke-width="1.5"/><rect x="38" y="161" width="84" height="19" rx="5" fill="url(#tGold-${metal})" stroke="${P.stroke}" stroke-width="1.5"/><rect x="62" y="166" width="36" height="9" rx="2" fill="${P.plate}" stroke="${P.stroke}" stroke-width="1"/><path d="M67 170.5 H93" stroke="${P.band}" stroke-width="1.2"/></svg>`;
         }
         const STAR_SVG = (() => {
             const p = [];
@@ -842,7 +890,8 @@
             4: "دوري 4 (ربع النهائي)",
             2: "دوري 2 (نصف النهائي)",
             1: "المواجهة النهائية",
-            0: ""
+            0: "",
+            "-1": "مباراة المركز الثالث"
         };
 
         function toggleThemeMenu(forceState) {
@@ -865,9 +914,21 @@
             trigger.setAttribute('aria-expanded', String(shouldOpen));
         }
 
+        function stageBtnId(n) { return n === THIRD ? 'stage-third' : 'stage-' + n; }
+
+        function toggleModeMenu(forceState) {
+            const menu = document.getElementById('modeOptions');
+            const trigger = document.getElementById('modePickerTrigger');
+            const shouldOpen = typeof forceState === 'boolean'
+                ? forceState
+                : !menu.classList.contains('open');
+            menu.classList.toggle('open', shouldOpen);
+            trigger.setAttribute('aria-expanded', String(shouldOpen));
+        }
+
         function setTheme(themeName) {
             currentTheme = themeName;
-            document.querySelectorAll('.theme-tab').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('#themeTabs .theme-tab').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById('theme-' + themeName);
             if (activeBtn) activeBtn.classList.add('active');
             const selectedThemeText = activeBtn ? activeBtn.textContent.trim() : themeName;
@@ -951,7 +1012,7 @@
         // ===== الاسترجاع وقفل الأسماء =====
         function captureState() {
             if (matchesData.length) stageSnapshots[currentMatchesCount] = cloneMatches(matchesData);
-            return { names: originalPlayersText, stage: currentMatchesCount, snaps: cloneSnapshots(stageSnapshots), drawn: Object.assign({}, drawnStages), locked: namesLocked };
+            return { names: originalPlayersText, stage: currentMatchesCount, snaps: cloneSnapshots(stageSnapshots), drawn: Object.assign({}, drawnStages), locked: namesLocked, mode: tournamentMode, ranks: JSON.parse(JSON.stringify(threeRanks)) };
         }
         function pushUndo() {
             undoStack.push(captureState());
@@ -987,6 +1048,8 @@
             Object.keys(drawnStages).forEach(k => delete drawnStages[k]);
             Object.assign(drawnStages, st.drawn || {});
             namesLocked = !!st.locked;
+            tournamentMode = [1, 2, 3].includes(st.mode) ? st.mode : 1;
+            threeRanks = st.ranks ? JSON.parse(JSON.stringify(st.ranks)) : {};
             const target = (st.stage === 32 || stageSnapshots[st.stage]) ? st.stage : 32;
             matchesData = []; // كي لا تُحفظ الحالة الحالية فوق النسخة المستعادة
             setStage(target);
@@ -1091,6 +1154,7 @@
         }
 
         function setStage(matchesCount, namesForStage = null) {
+            if (matchesCount === THIRD) { const fk0 = finalKey(); matchesCount = fk0 === null ? 32 : fk0; }
             // لا يمكن الانتقال إلى دور لم يتأهل إليه أحد بعد.
             if (namesForStage === null && matchesCount !== 32 && !stageSnapshots[matchesCount]) {
                 alert('لم يتأهل أحد لهذا الدور بعد.\nأهّل الفائزين من الدور السابق أولاً.');
@@ -1115,12 +1179,13 @@
             currentMatchesCount = matchesCount;
             playersInput.value = originalPlayersText;
             document.querySelectorAll('.stage-tab').forEach(btn => btn.classList.remove('active'));
-            const activeBtn = document.getElementById('stage-' + matchesCount);
+            const activeBtn = document.getElementById(stageBtnId(matchesCount));
             if (activeBtn) activeBtn.classList.add('active');
             document.getElementById('currentStageLabel').textContent = activeBtn ? activeBtn.textContent.trim() : stageTitles[matchesCount];
             toggleStageMenu(false);
             document.getElementById('displaySub').innerText = stageTitles[matchesCount]; document.getElementById('displaySub').style.display = (currentMatchesCount === 0) ? 'none' : '';
             updatePlayersLabel();
+            updateModeUI();
             renderMatches();
         }
 
@@ -1140,15 +1205,31 @@
                 trophy.innerHTML = trophySvg(themes[currentTheme].accent);
                 const label = document.createElement('div');
                 label.className = 'champion-label';
-                label.textContent = 'بطل التحدي';
+                label.textContent = tournamentMode >= 2 ? 'البطل' : 'بطل التحدي';
                 const name = document.createElement('div');
                 name.className = 'champion-name';
                 name.innerHTML = champName ? STAR_SVG + '<span></span>' + STAR_SVG : ''; if (champName) name.querySelector('span').textContent = champName;
                 champ.append(trophy, label, name);
+                const podium = podiumItems();
+                if (podium.length) {
+                    const row = document.createElement('div');
+                    row.className = 'podium-row';
+                    podium.forEach(it => {
+                        const box = document.createElement('div'); box.className = 'podium-item';
+                        const tr = document.createElement('div'); tr.className = 'podium-trophy';
+                        tr.innerHTML = trophySvg(METAL_GLOW[it.metal], it.metal);
+                        const lb = document.createElement('div'); lb.className = 'podium-label'; lb.textContent = it.label;
+                        const nm = document.createElement('div'); nm.className = 'podium-name'; nm.textContent = it.name;
+                        box.append(tr, lb, nm);
+                        row.appendChild(box);
+                    });
+                    champ.appendChild(row);
+                }
                 container.appendChild(champ);
                 return;
             }
             colHeader.style.display = 'flex';
+            if (isThreeWay()) { colHeader.style.display = 'none'; renderThreeWayBoard(container); return; }
             if (matchesData.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'empty-state';
@@ -1165,6 +1246,8 @@
                 container.appendChild(empty);
                 return;
             }
+            const withThird = thirdShown();
+            if (withThird) container.appendChild(sectionTitle('🏆 المباراة النهائية'));
             matchesData.forEach((match, index) => {
                 const row = document.createElement('div');
                 row.className = 'match-row';
@@ -1185,6 +1268,10 @@
                 row.append(idx, sideA, vs, sideB);
                 container.appendChild(row);
             });
+            if (withThird) {
+                container.appendChild(sectionTitle('🥉 مباراة المركز الثالث'));
+                container.appendChild(buildThirdRow());
+            }
         }
 
         function selectWinner(matchIndex, side) {
@@ -1210,6 +1297,7 @@
             }
             Object.keys(stageSnapshots).forEach(key => delete stageSnapshots[key]);
             Object.keys(drawnStages).forEach(key => delete drawnStages[key]);
+            threeRanks = {};
             currentMatchesCount = 32;
             fillStageFromNames(32, namesFromOriginalList());
             stageSnapshots[32] = cloneMatches(matchesData);
@@ -1220,6 +1308,7 @@
             toggleStageMenu(false);
             document.getElementById('displaySub').innerText = stageTitles[32]; document.getElementById('displaySub').style.display = (currentMatchesCount === 0) ? 'none' : '';
             updatePlayersLabel();
+            updateModeUI();
             renderMatches();
         }
 
@@ -1265,6 +1354,23 @@
 
         function advanceWinners() {
             if (currentMatchesCount === 0) return;
+            if (isThreeWay()) {
+                const tn = threeWayNames(matchesData);
+                const rk = ranksFor(currentMatchesCount);
+                const byRank = {};
+                tn.forEach(n => { if (rk[n]) byRank[rk[n]] = n; });
+                if (!byRank[1] || !byRank[2] || !byRank[3]) { alert('حدد المركز الأول والثاني والثالث للاعبين الثلاثة أولاً.'); return; }
+                saveCurrentStage();
+                const ex = stageSnapshots[0] && stageSnapshots[0][0] ? stageSnapshots[0][0].a : '';
+                if (ex && ex !== byRank[1] && !confirm('الفائز الحالي مختلف عن المركز الأول المحدد.\nهل تريد استبداله؟')) return;
+                if (!ex || ex !== byRank[1]) pushUndo();
+                setStage(0, [byRank[1]]);
+                namesLocked = true;
+                updateNamesLockUI();
+                updateModeUI();
+                saveState();
+                return;
+            }
             const populatedMatches = matchesData.filter(m => m.a || m.b);
             if (populatedMatches.length === 0) {
                 alert("أدخل أسماء المشاركين أولاً.");
@@ -1289,24 +1395,214 @@
             let nextCount = nextStages[currentMatchesCount];
             // فائز واحد فقط (مباراة واحدة متبقية) = بطل البطولة مباشرة، دون «تأهل تلقائي».
             if (winners.length === 1) nextCount = 0;
+            // نظام الثلاثة: لا يُعلن الفائزون قبل حسم مباراة المركز الثالث.
+            if (nextCount === 0 && tournamentMode === 3 && stageSnapshots[THIRD] && stageSnapshots[THIRD][0] && !stageSnapshots[THIRD][0].winner) {
+                alert('حدد فائز مباراة المركز الثالث أولاً قبل إعلان الفائزين.');
+                return;
+            }
 
             // الدور التالي موجود مسبقاً: لا نعيد بناءه ونفقد قرعته إلا بتأكيد.
             const existing = stageSnapshots[nextCount];
             const existingNames = existing ? existing.flatMap(m => [m.a, m.b]).filter(n => n && n !== BYE_TEXT) : [];
             if (existingNames.length) {
                 const same = existingNames.length === winners.length && winners.every(w => existingNames.includes(w));
-                if (same) { setStage(nextCount); saveState(); return; }
+                if (same) { setStage(nextCount); syncThirdPlace(); updateModeUI(); saveState(); return; }
                 if (!confirm('الدور التالي موجود مسبقاً بأسماء مختلفة عن الفائزين الحاليين.\nهل تريد إعادة بنائه من الفائزين الحاليين؟ سيُستبدل ما فيه.\n(يمكنك التراجع بزر «استرجاع القرعة السابقة»)')) return;
             }
 
             pushUndo();
             // عند العدد الفردي لا يتكرر التأهل التلقائي لمن نالوه في دور سابق.
+            const advancedFrom = currentMatchesCount;
             if (nextCount > 0) placeByeLast(winners, nextCount, true);
             delete drawnStages[nextCount];
             setStage(nextCount, winners);
             namesLocked = true;
             updateNamesLockUI();
+            const thirdStatus = syncThirdPlace();
+            updateModeUI();
             saveState();
+            if (thirdStatus === 'bye' && advancedFrom === semiKey()) {
+                alert('لن تُنشأ مباراة المركز الثالث: توجد في نصف النهائي مواجهة فيها «تأهل تلقائي»، فلا يوجد خاسران.');
+            }
+        }
+
+        // ===== النهائي + المركز الثالث في جدول واحد، واللاعبون الثلاثة الباقون =====
+        function finalKey() {
+            const k = Object.keys(stageSnapshots).map(Number).filter(n => n > 0).sort((a, b) => a - b)[0];
+            return k === undefined ? null : k;
+        }
+        function thirdShown() {
+            return tournamentMode === 3 && currentMatchesCount > 0 && !!(stageSnapshots[THIRD] && stageSnapshots[THIRD][0]) && currentMatchesCount === finalKey();
+        }
+        function threeWayNames(matches) {
+            const set = [];
+            (matches || []).forEach(m => [m.a, m.b].forEach(n => { if (n && n !== BYE_TEXT && !set.includes(n)) set.push(n); }));
+            return set.length === 3 ? set : [];
+        }
+        function isThreeWay() {
+            return tournamentMode === 3 && currentMatchesCount > 0 && threeWayNames(matchesData).length === 3;
+        }
+        function ranksFor(key) { return threeRanks[key] || {}; }
+        function setRank(name, r) {
+            const key = currentMatchesCount;
+            const cur = Object.assign({}, threeRanks[key] || {});
+            if (cur[name] === r) delete cur[name];
+            else { Object.keys(cur).forEach(n => { if (cur[n] === r) delete cur[n]; }); cur[name] = r; }
+            threeRanks[key] = cur;
+            renderMatches();
+            saveState();
+        }
+        function selectThirdWinner(side) {
+            const t = stageSnapshots[THIRD];
+            if (!t || !t[0] || !t[0][side]) return;
+            t[0].winner = t[0].winner === side ? null : side;
+            renderMatches();
+            saveState();
+        }
+        function sectionTitle(text) {
+            const d = document.createElement('div');
+            d.className = 'section-title';
+            d.textContent = text;
+            return d;
+        }
+        function buildThirdRow() {
+            const m = stageSnapshots[THIRD][0];
+            const row = document.createElement('div'); row.className = 'match-row';
+            const idx = document.createElement('div'); idx.className = 'index-badge'; idx.textContent = '🥉';
+            const sideA = document.createElement('div'); sideA.className = 'side' + (m.winner === 'a' ? ' winner' : ''); sideA.textContent = m.a;
+            sideA.addEventListener('click', () => selectThirdWinner('a'));
+            const vs = document.createElement('div'); vs.className = 'vs-badge'; vs.textContent = 'VS';
+            const sideB = document.createElement('div'); sideB.className = 'side' + (m.winner === 'b' ? ' winner' : ''); sideB.textContent = m.b;
+            sideB.addEventListener('click', () => selectThirdWinner('b'));
+            row.append(idx, sideA, vs, sideB);
+            return row;
+        }
+        function renderThreeWayBoard(container) {
+            const names = threeWayNames(matchesData);
+            const rk = ranksFor(currentMatchesCount);
+            container.appendChild(sectionTitle('🎯 اللاعبون الثلاثة الباقون'));
+            const hint = document.createElement('div');
+            hint.className = 'rank-hint';
+            hint.textContent = 'يلعبون لعبة واحدة؛ حدد مركز كل لاعب ثم اضغط «تأهيل الفائزين».';
+            container.appendChild(hint);
+            names.forEach(n => {
+                const row = document.createElement('div'); row.className = 'rank-row' + (rk[n] === 1 ? ' r1' : '');
+                const nm = document.createElement('div'); nm.className = 'rank-name'; nm.textContent = n;
+                const btns = document.createElement('div'); btns.className = 'rank-btns';
+                [[1, '🥇'], [2, '🥈'], [3, '🥉']].forEach(([r, icon]) => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'rank-btn' + (rk[n] === r ? ' active' : '');
+                    b.textContent = icon;
+                    b.addEventListener('click', () => setRank(n, r));
+                    btns.appendChild(b);
+                });
+                row.append(nm, btns);
+                container.appendChild(row);
+            });
+        }
+
+        // ===== نظام البطولة (فائز واحد / فائزان / ثلاثة فائزين) =====
+        function updateModeUI() {
+            const lab = document.getElementById('currentModeLabel');
+            if (lab) lab.textContent = MODE_LABELS[tournamentMode];
+            [1, 2, 3].forEach(n => {
+                const b = document.getElementById('mode-' + n);
+                if (b) b.classList.toggle('active', n === tournamentMode);
+            });
+        }
+
+        // مفتاح دور نصف النهائي: آخر دور فيه مواجهتان وبُني بعده دور تالٍ.
+        function semiKey() {
+            const keys = Object.keys(stageSnapshots).map(Number).filter(k => k > 0).sort((a, b) => a - b);
+            const k = keys.find(key => (stageSnapshots[key] || []).length === 2 && stageSnapshots[NEXT_STAGE[key]]);
+            return k === undefined ? null : k;
+        }
+
+        // يبني مباراة المركز الثالث من خاسري نصف النهائي المحسوم. يعيد: off | none | pending | bye | ok
+        function syncThirdPlace() {
+            if (tournamentMode !== 3) return 'off';
+            const sk = semiKey();
+            if (sk === null) return 'none';
+            const semi = stageSnapshots[sk];
+            if (!semi.every(m => m.winner)) return 'pending';
+            const losers = [];
+            semi.forEach(m => {
+                if (m.winner === 'a' && m.b && m.b !== BYE_TEXT) losers.push(m.b);
+                else if (m.winner === 'b' && m.a) losers.push(m.a);
+            });
+            if (losers.length < 2) { delete stageSnapshots[THIRD]; return 'bye'; }
+            const cur = stageSnapshots[THIRD];
+            if (!cur || !cur[0] || cur[0].a !== losers[0] || cur[0].b !== losers[1]) {
+                stageSnapshots[THIRD] = [{ a: losers[0], b: losers[1], winner: null }];
+            }
+            return 'ok';
+        }
+
+        function setMode(n) {
+            toggleModeMenu(false);
+            if (n === tournamentMode) return;
+            if (namesLocked && !confirm('تغيير نظام البطولة سيغيّر شاشة الفائزين ومرحلة المركز الثالث.\nهل تريد المتابعة؟\n(يمكنك التراجع بزر «استرجاع القرعة السابقة»)')) return;
+            if (namesLocked) pushUndo();
+            if (matchesData.length) saveCurrentStage();
+            tournamentMode = n;
+            const status = syncThirdPlace();
+            if (currentMatchesCount === THIRD && n !== 3) {
+                const lk = Object.keys(stageSnapshots).map(Number).filter(k => k > 0).sort((a, b) => a - b)[0];
+                setStage(lk === undefined ? 32 : lk);
+            } else {
+                renderMatches();
+            }
+            updateModeUI();
+            saveState();
+            if (status === 'bye') alert('لا توجد مباراة مركز ثالث: توجد في نصف النهائي مواجهة فيها «تأهل تلقائي»، فلا يوجد خاسران.');
+        }
+
+        // عناصر المنصة (الوصيف ثم الثالث) تحت البطل في شاشة الفائزين وفي الصورة.
+        function podiumItems() {
+            if (tournamentMode < 2 || currentMatchesCount !== 0) return [];
+            const first = (matchesData[0] && matchesData[0].a) || '';
+            if (!first) return [];
+            const keys = Object.keys(stageSnapshots).map(Number).filter(k => k > 0).sort((a, b) => a - b);
+            if (tournamentMode === 3 && keys.length) {
+                const tn = threeWayNames(stageSnapshots[keys[0]] || []);
+                const rk = ranksFor(keys[0]);
+                const byRank = {};
+                tn.forEach(n => { if (rk[n]) byRank[rk[n]] = n; });
+                if (tn.length === 3 && Object.keys(byRank).length) {
+                    const out = [];
+                    if (byRank[2]) out.push({ metal: 'silver', label: 'الوصيف', name: byRank[2] });
+                    if (byRank[3]) out.push({ metal: 'bronze', label: 'المركز الثالث', name: byRank[3] });
+                    return out;
+                }
+            }
+            let second = '';
+            if (keys.length) (stageSnapshots[keys[0]] || []).forEach(m => {
+                if (m.winner === 'a' && m.a === first && m.b && m.b !== BYE_TEXT) second = m.b;
+                else if (m.winner === 'b' && m.b === first && m.a) second = m.a;
+            });
+            const items = [];
+            if (second) items.push({ metal: 'silver', label: 'الوصيف', name: second });
+            if (tournamentMode === 3) {
+                const t3 = stageSnapshots[THIRD];
+                if (t3 && t3[0] && t3[0].winner) items.push({ metal: 'bronze', label: 'المركز الثالث', name: t3[0].winner === 'a' ? t3[0].a : t3[0].b });
+            }
+            return items;
+        }
+
+        // ===== حفظ بيانات الفعالية =====
+        const EVENT_FIELD_IDS = { game: 'gameNameInput', channel: 'channelNameInput', title: 'eventTitleInput', owner: 'ownerInput', date: 'eventDateInput', time: 'eventTimeInput' };
+        function collectFields() {
+            const out = {};
+            Object.keys(EVENT_FIELD_IDS).forEach(k => { const el = document.getElementById(EVENT_FIELD_IDS[k]); if (el) out[k] = el.value; });
+            return out;
+        }
+        function applyFields(f) {
+            if (!f || typeof f !== 'object') return;
+            Object.keys(EVENT_FIELD_IDS).forEach(k => {
+                const el = document.getElementById(EVENT_FIELD_IDS[k]);
+                if (el && typeof f[k] === 'string') el.value = f[k];
+            });
         }
 
         function clearAll() {
@@ -1315,6 +1611,7 @@
             Object.keys(stageSnapshots).forEach(key => delete stageSnapshots[key]);
             Object.keys(drawnStages).forEach(key => delete drawnStages[key]);
             namesLocked = false;
+            threeRanks = {};
             document.getElementById('playersInput').value = '';
             fillStageFromNames(currentMatchesCount, []);
             stageSnapshots[currentMatchesCount] = cloneMatches(matchesData);
@@ -1437,10 +1734,14 @@
             const hasG = Boolean(gameName), hasT = Boolean(eventTitle);
             const frameH = (hasG || hasT) ? 12 + (hasG ? 34 : 0) + (hasG && hasT ? 9 : 0) + (hasT ? 38 : 0) + 12 : 0;
             const headerHeight = 12 + (frameH ? frameH + 8 : 0) + (metaParts.length ? 22 : 0) + 12;
-            const colsHeaderHeight = currentMatchesCount === 0 ? 0 : 22;
+            const threeWayImg = isThreeWay();
+            const thirdImg = !threeWayImg && thirdShown();
+            const colsHeaderHeight = (currentMatchesCount === 0 || threeWayImg) ? 0 : 22;
             const rowHeight = 30, rowGap = 4;
             // ارتفاع الصورة يتبع عدد المواجهات الظاهرة فعلياً، لا الحد الأعلى للمرحلة.
-            const bodyHeight = currentMatchesCount === 0 ? 268 : (matchesData.length === 0 ? 110 : matchesData.length * (rowHeight + rowGap));
+            const podiumItemsImg = podiumItems();
+            const podiumExtra = podiumItemsImg.length ? 156 : 0;
+            const bodyHeight = currentMatchesCount === 0 ? 268 + podiumExtra : threeWayImg ? (24 + 3 * (rowHeight + rowGap) + 8) : (thirdImg ? 88 : 0) + (matchesData.length === 0 ? 110 : matchesData.length * (rowHeight + rowGap));
             const footerHeight = 36;
             const totalHeight = headerHeight + colsHeaderHeight + bodyHeight + footerHeight;
             const canvas = document.createElement('canvas');
@@ -1466,6 +1767,15 @@
                     trophyImg.onload = resolve; trophyImg.onerror = resolve;
                     trophyImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(trophySvg(t.accent));
                 });
+            }
+            const podiumImgs = {};
+            for (const it of podiumItemsImg) {
+                const im = new Image();
+                await new Promise(resolve => {
+                    im.onload = resolve; im.onerror = resolve;
+                    im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(trophySvg(METAL_GLOW[it.metal], it.metal));
+                });
+                podiumImgs[it.metal] = im;
             }
             ctx.fillStyle = t.cardBg;
             roundRect(ctx, 0, 0, width, totalHeight, 14);
@@ -1522,7 +1832,7 @@
             ctx.stroke();
             yCursor += 12;
             if (currentMatchesCount === 0) {
-                const boxX = 16, boxW = width - 32, boxH = 262;
+                const boxX = 16, boxW = width - 32, boxH = 262 + podiumExtra;
                 ctx.fillStyle = t.badgeBg;
                 roundRect(ctx, boxX, yCursor, boxW, boxH, 12);
                 ctx.fill();
@@ -1533,7 +1843,7 @@
                 if (trophyImg && trophyImg.naturalWidth) ctx.drawImage(trophyImg, width / 2 - 68, yCursor + 6, 136, 162);
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.font = 'bold 18px sans-serif'; ctx.fillStyle = t.sub;
-                ctx.fillText('بطل التحدي', width / 2, yCursor + 186);
+                ctx.fillText(tournamentMode >= 2 ? 'البطل' : 'بطل التحدي', width / 2, yCursor + 186);
                 const champName = matchesData[0]?.a || '';
                 ctx.font = 'bold 28px sans-serif'; ctx.fillStyle = t.accent;
                 ctx.fillText(champName, width / 2, yCursor + 226, width - 140);
@@ -1541,6 +1851,47 @@
                     const nw = Math.min(ctx.measureText(champName).width, width - 140);
                     [-1, 1].forEach(sd => drawStar(ctx, width / 2 + sd * (nw / 2 + 22), yCursor + 226, 9));
                 }
+                if (podiumItemsImg.length) {
+                    const py = yCursor + 258;
+                    ctx.save(); ctx.globalAlpha = .5; ctx.strokeStyle = t.accent; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(boxX + 24, py); ctx.lineTo(boxX + boxW - 24, py); ctx.stroke(); ctx.restore();
+                    const xs = podiumItemsImg.length === 1 ? [width / 2] : [width / 2 + 105, width / 2 - 105];
+                    podiumItemsImg.forEach((it, i) => {
+                        const cx = xs[i], im = podiumImgs[it.metal];
+                        if (im && im.naturalWidth) ctx.drawImage(im, cx - 38, py + 8, 76, 90);
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = t.sub;
+                        ctx.fillText(it.label, cx, py + 112);
+                        ctx.font = 'bold 20px sans-serif'; ctx.fillStyle = '#ffffff';
+                        ctx.fillText(it.name, cx, py + 140, 195);
+                    });
+                }
+            } else if (threeWayImg) {
+                const padX = 44, rowW = width - padX * 2, badgeW = 40, labW = 72;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = t.accent;
+                ctx.fillText('🎯 اللاعبون الثلاثة الباقون', width / 2, yCursor + 8);
+                yCursor += 24;
+                const rk = ranksFor(currentMatchesCount);
+                const ordered = threeWayNames(matchesData).slice().sort((x, y) => (rk[x] || 9) - (rk[y] || 9));
+                const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }, LAB = { 1: 'الأول', 2: 'الثاني', 3: 'الثالث' };
+                ordered.forEach(n => {
+                    const r = rk[n], rowX = padX, rowY = yCursor;
+                    ctx.fillStyle = t.rowBg; roundRect(ctx, rowX, rowY, rowW, rowHeight, 8); ctx.fill();
+                    if (r === 1) { ctx.fillStyle = t.winnerBg || 'rgba(6, 214, 160, 0.28)'; ctx.fillRect(rowX + labW, rowY + 1, rowW - labW - badgeW, rowHeight - 2); }
+                    ctx.fillStyle = t.idxBg; ctx.fillRect(rowX + rowW - badgeW, rowY + 1, badgeW - 1, rowHeight - 2);
+                    ctx.fillStyle = t.vsBg; ctx.fillRect(rowX + 1, rowY + 1, labW - 1, rowHeight - 2);
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#ffffff';
+                    ctx.fillText(r ? MEDAL[r] : '—', rowX + rowW - badgeW / 2, rowY + rowHeight / 2);
+                    ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = t.sub;
+                    ctx.fillText(r ? LAB[r] : '—', rowX + labW / 2, rowY + rowHeight / 2);
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.fillStyle = r === 1 ? (t.winnerColor || '#06d6a0') : '#edf2f7';
+                    ctx.fillText(n, rowX + labW + (rowW - labW - badgeW) / 2, rowY + rowHeight / 2, rowW - labW - badgeW - 10);
+                    ctx.strokeStyle = t.rowBorder; ctx.lineWidth = 1; roundRect(ctx, rowX, rowY, rowW, rowHeight, 8); ctx.stroke();
+                    yCursor += rowHeight + rowGap;
+                });
             } else {
                 ctx.font = 'bold 14px sans-serif';
                 ctx.fillStyle = t.sub;
@@ -1550,7 +1901,7 @@
                 ctx.fillText('صاحب الجلسة', padX + rowW - idxW - sideW / 2, yCursor + 8);
                 ctx.fillText('الخصم', padX + sideW / 2, yCursor + 8);
                 yCursor += 22;
-                matchesData.forEach((match, index) => {
+                const drawMatchRow = (match, index, idxLabel) => {
                     const rowX = padX, rowY = yCursor;
                     ctx.fillStyle = t.rowBg;
                     roundRect(ctx, rowX, rowY, rowW, rowHeight, 8);
@@ -1560,7 +1911,7 @@
                     ctx.fillRect(idxX, rowY + 1, idxW - 1, rowHeight - 2);
                     ctx.font = 'bold 12px sans-serif';
                     ctx.fillStyle = t.sub;
-                    ctx.fillText((index + 1).toString().padStart(2, '0'), idxX + idxW / 2, rowY + rowHeight / 2);
+                    ctx.fillText(idxLabel || (index + 1).toString().padStart(2, '0'), idxX + idxW / 2, rowY + rowHeight / 2);
                     const sideAX = idxX - sideW;
                     if (match.winner === 'a') {
                         ctx.fillStyle = t.winnerBg || 'rgba(6, 214, 160, 0.28)';
@@ -1595,7 +1946,18 @@
                     roundRect(ctx, rowX, rowY, rowW, rowHeight, 8);
                     ctx.stroke();
                     yCursor += rowHeight + rowGap;
-                });
+                };
+                const sectionHead = txt => {
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = t.accent;
+                    ctx.fillText(txt, width / 2, yCursor + 8);
+                };
+                if (thirdImg) { sectionHead('🏆 المباراة النهائية'); yCursor += 24; }
+                matchesData.forEach((m, i) => drawMatchRow(m, i));
+                if (thirdImg) {
+                    yCursor += 6; sectionHead('🥉 مباراة المركز الثالث'); yCursor += 24;
+                    drawMatchRow(stageSnapshots[THIRD][0], 0, '🥉');
+                }
                 if (matchesData.length === 0) {
                     const bx = 16, bw = width - 32, bh = 92;
                     ctx.fillStyle = t.badgeBg;
@@ -1639,7 +2001,7 @@
             ctx.fillText(designerText, 18, footerY + 3, width * .48);
 
             const link = document.createElement('a');
-            link.download = `wolf-challenge-${currentMatchesCount}.png`;
+            link.download = `wolf-challenge-${currentMatchesCount === THIRD ? 'third' : currentMatchesCount}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         }
@@ -1674,8 +2036,10 @@
         document.addEventListener('click', function(event) {
             const picker = document.getElementById('themePicker');
             const stagePicker = document.getElementById('stagePicker');
+            const modePicker = document.getElementById('modePicker');
             if (picker && !picker.contains(event.target)) toggleThemeMenu(false);
             if (stagePicker && !stagePicker.contains(event.target)) toggleStageMenu(false);
+            if (modePicker && !modePicker.contains(event.target)) toggleModeMenu(false);
         });
 
         fillStageFromNames(32, []);
@@ -1688,7 +2052,7 @@
         function saveState() {
             try {
                 if (matchesData.length) stageSnapshots[currentMatchesCount] = cloneMatches(matchesData);
-                localStorage.setItem(STORE_KEY, JSON.stringify({ names: originalPlayersText, stage: currentMatchesCount, theme: currentTheme, snaps: stageSnapshots, drawn: drawnStages, locked: namesLocked, undo: undoStack }));
+                localStorage.setItem(STORE_KEY, JSON.stringify({ names: originalPlayersText, stage: currentMatchesCount, theme: currentTheme, mode: tournamentMode, ranks: threeRanks, fields: collectFields(), snaps: stageSnapshots, drawn: drawnStages, locked: namesLocked, undo: undoStack }));
             } catch (e) { /* التخزين غير متاح */ }
         }
         function loadState() {
@@ -1697,6 +2061,9 @@
                 const d = JSON.parse(raw);
                 originalPlayersText = d.names || '';
                 document.getElementById('playersInput').value = originalPlayersText;
+                tournamentMode = [1, 2, 3].includes(d.mode) ? d.mode : 1;
+                threeRanks = (d.ranks && typeof d.ranks === 'object') ? d.ranks : {};
+                applyFields(d.fields);
                 Object.keys(stageSnapshots).forEach(k => delete stageSnapshots[k]);
                 Object.assign(stageSnapshots, d.snaps || {});
                 updateText();
@@ -1712,6 +2079,7 @@
                 updateNamesLockUI();
                 updateUndoUI();
                 updatePlayersLabel();
+                updateModeUI();
             } catch (e) { /* ابدأ من الصفر إذا تعذرت الاستعادة */ }
         }
         ['input', 'change', 'click'].forEach(ev => document.addEventListener(ev, () => setTimeout(saveState, 60), true));
